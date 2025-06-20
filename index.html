@@ -3,80 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optimisateur Robot Aspirateur Avancé</title>
+    <title>Optimisateur Robot Aspirateur Avancé avec Pathfinding</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh; margin: 0; padding: 0;
-        }
-        .container {
-            max-width: 1300px; margin: 30px auto;
-            background: #fff; border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-        h1 {
-            text-align: center;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-        }
-        .controls {
-            display: flex; flex-wrap: wrap; gap: 25px; margin-bottom: 20px;
-        }
-        .control-group {
-            display: flex; flex-direction: column; gap: 7px; min-width: 200px;
-        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; margin: 0; padding: 0;}
+        .container {max-width: 1300px; margin: 30px auto; background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); padding: 30px;}
+        h1 {text-align: center; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; margin-bottom: 20px;}
+        .controls {display: flex; flex-wrap: wrap; gap: 25px; margin-bottom: 20px;}
+        .control-group {display: flex; flex-direction: column; gap: 7px; min-width: 200px;}
         label { font-weight: 600; color: #2c3e50; }
-        input, select, button {
-            padding: 10px; border: 2px solid #e3e8ef; border-radius: 10px;
-            font-size: 1rem; background: white; transition: border 0.2s;
-        }
+        input, select, button {padding: 10px; border: 2px solid #e3e8ef; border-radius: 10px; font-size: 1rem; background: white; transition: border 0.2s;}
         input:focus, select:focus { border-color: #667eea; }
-        button {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white; border: none; cursor: pointer; font-weight: 600;
-        }
-        button:hover { background: linear-gradient(135deg, #764ba2, #667eea); }
-        .workspace {
-            display: flex; gap: 25px; min-height: 600px;
-        }
-        .canvas-container {
-            flex: 2; background: #fff; border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-width: 600px;
-        }
-        canvas {
-            display: block; background: #fafbfc; border-radius: 15px;
-            border: 1px solid #e3e8ef; width: 100%; height: 600px;
-        }
-        .sidebar {
-            flex: 1; background: #f5f6fa; border-radius: 15px; padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.07); min-width: 300px;
-        }
-        .zone-list { max-height: 180px; overflow-y: auto; margin-bottom: 15px; }
-        .zone-item {
-            display: flex; align-items: center; justify-content: space-between;
-            background: #fff; border-radius: 8px; padding: 6px 12px; margin-bottom: 5px;
-            font-size: 0.95em; border-left: 5px solid #667eea;
-        }
-        .stat-block {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 12px; color: white; padding: 15px; margin-top: 12px;
-        }
+        button { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; cursor: pointer; font-weight: 600;}
+        button:hover { background: linear-gradient(135deg, #764ba2, #667eea);}
+        .workspace { display: flex; gap: 25px; min-height: 600px;}
+        .canvas-container {flex: 2; background: #fff; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-width: 600px;}
+        canvas {display: block; background: #fafbfc; border-radius: 15px; border: 1px solid #e3e8ef; width: 100%; height: 600px;}
+        .sidebar {flex: 1; background: #f5f6fa; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.07); min-width: 300px;}
+        .zone-list { max-height: 180px; overflow-y: auto; margin-bottom: 15px;}
+        .zone-item {display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 8px; padding: 6px 12px; margin-bottom: 5px; font-size: 0.95em; border-left: 5px solid #667eea;}
+        .stat-block {background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; color: white; padding: 15px; margin-top: 12px;}
         .stat-block div { margin: 6px 0; }
-        .action-buttons button { margin: 7px 0; width: 100%; }
-        @media (max-width: 900px) {
-            .workspace { flex-direction: column; }
-            .canvas-container, .sidebar { min-width: 0; }
-        }
+        .action-buttons button {margin: 7px 0; width: 100%;}
+        @media (max-width: 900px) {.workspace { flex-direction: column; } .canvas-container, .sidebar { min-width: 0; }}
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🤖 Optimisateur Robot Aspirateur Avancé</h1>
+    <h1>🤖 Optimisateur Robot Aspirateur Pathfinding</h1>
     <div class="controls">
         <div class="control-group">
             <label>Forme géométrique</label>
@@ -146,6 +99,7 @@
     </div>
 </div>
 <script>
+// --- Données principales ---
 let canvas = document.getElementById('canvas');
 let ctx = canvas.getContext('2d');
 let zones = [], obstacles = [], walls = [];
@@ -158,6 +112,7 @@ let optimizedPath = [], simulationActive = false, simulationStep = 0;
 
 const PRIORITY_COLORS = {1:'#e74c3c',2:'#f39c12',3:'#f1c40f',4:'#2ecc71',5:'#3498db'};
 
+// --- UI Events ---
 document.getElementById('scale').onchange = function() {
     scale = parseInt(this.value); redraw();
 };
@@ -167,11 +122,11 @@ document.getElementById('robotDiameter').onchange = function() {
 document.getElementById('shapeType').onchange = function() {
     shapeMode = this.value;
 };
-
 canvas.addEventListener('mousedown', handleMouseDown);
 canvas.addEventListener('mousemove', handleMouseMove);
 canvas.addEventListener('mouseup', handleMouseUp);
 
+// --- Utilitaires géométrie ---
 function getMousePosition(e) {
     let rect = canvas.getBoundingClientRect();
     return {x: (e.clientX-rect.left), y:(e.clientY-rect.top)};
@@ -191,34 +146,37 @@ function getDistance(a,b) {
     let dx=a.x-b.x,dy=a.y-b.y;
     return Math.sqrt(dx*dx+dy*dy)/scale;
 }
+function getPolygonArea(points){
+    let a=0;
+    for(let i=0;i<points.length;i++){
+        let j=(i+1)%points.length;
+        a += points[i].x*points[j].y-points[j].x*points[i].y;
+    }
+    return Math.abs(a/2)/(scale*scale);
+}
 
-// --- DESSIN ---
+// --- Dessin ---
 function redraw() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawGrid();
-    // murs
     for(let wall of walls){
         ctx.strokeStyle = '#34495e'; ctx.lineWidth = 3/zoomLevel;
         drawPolygon(wall.points, false);
     }
-    // obstacles
     for(let ob of obstacles){
         ctx.fillStyle='rgba(231,76,60,0.6)'; ctx.strokeStyle='#e74c3c'; ctx.lineWidth=2/zoomLevel;
         drawPolygon(ob.points,true);
     }
-    // zones
     for(let zone of zones){
         let color = PRIORITY_COLORS[zone.priority];
         ctx.fillStyle = color+'33'; ctx.strokeStyle = color;
         ctx.lineWidth = 2/zoomLevel;
         drawPolygon(zone.points,true);
-        // centre (saleté)
         let c = getPolygonCenter(zone.points);
         ctx.fillStyle='#2c3e50'; ctx.font=`${12/zoomLevel}px Arial`;
         ctx.textAlign='center';
         ctx.fillText(`${zone.dirtLevel}L/m²`,c.x,c.y);
     }
-    // station recharge
     if(chargingStation){
         ctx.save();
         ctx.fillStyle="#27ae60";
@@ -230,12 +188,9 @@ function redraw() {
         ctx.stroke();
         ctx.restore();
     }
-    // chemin optimisé
     if(optimizedPath.length>1) drawPath(optimizedPath);
-    // robot en simulation
     if(simulationActive && simulationStep < optimizedPath.length) drawRobot(optimizedPath[simulationStep]);
 }
-
 function drawGrid() {
     ctx.save();
     ctx.strokeStyle="#ecf0f1"; ctx.lineWidth=1/zoomLevel;
@@ -282,7 +237,31 @@ function drawRobot(pos) {
     ctx.stroke();
     ctx.restore();
 }
-// --- INTERACTION ---
+function drawPreviewShape(start,end,type){
+    let pts = createGeometricShape(start,end,type);
+    if(!pts.length) return;
+    ctx.save();
+    ctx.strokeStyle='#3498db'; ctx.lineWidth=2/zoomLevel;
+    ctx.setLineDash([5/zoomLevel,5/zoomLevel]);
+    ctx.fillStyle='rgba(52,152,219,0.2)';
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x,pts[0].y);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+}
+function drawCurrentZone() {
+    if(currentZone.length==0) return;
+    ctx.save();
+    ctx.strokeStyle='#3498db'; ctx.lineWidth=2/zoomLevel;
+    ctx.setLineDash([5/zoomLevel,5/zoomLevel]);
+    ctx.beginPath();
+    ctx.moveTo(currentZone[0].x,currentZone[0].y);
+    for(let i=1;i<currentZone.length;i++) ctx.lineTo(currentZone[i].x,currentZone[i].y);
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+}
+
+// --- Interaction canvas ---
 function handleMouseDown(e) {
     let world = screenToWorld(getMousePosition(e));
     let elementType = document.getElementById('elementType').value;
@@ -328,29 +307,6 @@ function handleMouseUp(e) {
     }
     currentZone=[];
     redraw();
-}
-function drawPreviewShape(start,end,type){
-    let pts = createGeometricShape(start,end,type);
-    if(!pts.length) return;
-    ctx.save();
-    ctx.strokeStyle='#3498db'; ctx.lineWidth=2/zoomLevel;
-    ctx.setLineDash([5/zoomLevel,5/zoomLevel]);
-    ctx.fillStyle='rgba(52,152,219,0.2)';
-    ctx.beginPath();
-    ctx.moveTo(pts[0].x,pts[0].y);
-    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.restore();
-}
-function drawCurrentZone() {
-    if(currentZone.length==0) return;
-    ctx.save();
-    ctx.strokeStyle='#3498db'; ctx.lineWidth=2/zoomLevel;
-    ctx.setLineDash([5/zoomLevel,5/zoomLevel]);
-    ctx.beginPath();
-    ctx.moveTo(currentZone[0].x,currentZone[0].y);
-    for(let i=1;i<currentZone.length;i++) ctx.lineTo(currentZone[i].x,currentZone[i].y);
-    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
 }
 function createGeometricShape(start,end,type){
     let pts=[];
@@ -399,7 +355,6 @@ function updateZoneList(){
     document.getElementById("zoneList").innerHTML=html;
 }
 function updateStats(){
-    // Surface & volume
     let totalA=0, totalD=0;
     for(let z of zones){
         totalA += getPolygonArea(z.points);
@@ -408,28 +363,18 @@ function updateStats(){
     document.getElementById("totalArea").textContent=totalA.toFixed(1)+" m²";
     document.getElementById("totalDirt").textContent=totalD.toFixed(1)+" L";
 }
-function getPolygonArea(points){
-    // Aire en m²
-    let a=0;
-    for(let i=0;i<points.length;i++){
-        let j=(i+1)%points.length;
-        a += points[i].x*points[j].y-points[j].x*points[i].y;
-    }
-    return Math.abs(a/2)/(scale*scale);
-}
 function clearAll(){
     zones=[]; obstacles=[]; walls=[]; chargingStation=null; optimizedPath=[];
     updateZoneList(); updateStats(); redraw();
 }
 
-// --- Génération du chemin de couverture pour rectangle ---
+// --- Couverture de rectangle ---
 function generateCoveragePathForRectangle(rectPoints, robotDiameter) {
-    // rectPoints: 4 points [{x,y},{x,y},{x,y},{x,y}] supposé axis aligned
     let minX = Math.min(...rectPoints.map(p => p.x));
     let maxX = Math.max(...rectPoints.map(p => p.x));
     let minY = Math.min(...rectPoints.map(p => p.y));
     let maxY = Math.max(...rectPoints.map(p => p.y));
-    let bandSpacing = robotDiameter * scale * 0.98; // 0.98 pour chevauchement léger
+    let bandSpacing = robotDiameter * scale * 0.98;
     let path = [];
     let direction = 1;
     for (let y = minY + bandSpacing / 2; y < maxY; y += bandSpacing) {
@@ -446,7 +391,86 @@ function generateCoveragePathForRectangle(rectPoints, robotDiameter) {
     return path;
 }
 
-// --- OPTIMISATION DE TRAJECTOIRE AVEC COUVERTURE ---
+// --- Grille/Pathfinding ---
+// On crée une grille 2D avec obstacles/murs marqués comme bloquants
+function makeGrid(cellSize=20){
+    let width = canvas.width, height = canvas.height;
+    let cols = Math.ceil(width / cellSize), rows = Math.ceil(height / cellSize);
+    let grid = [];
+    for(let y=0; y<rows; y++){
+        let row = [];
+        for(let x=0; x<cols; x++) row.push(0);
+        grid.push(row);
+    }
+    // Marque obstacles/murs (simple: pixels inside polygon)
+    let markPolygon = (poly) => {
+        // bounding box
+        let minX=Math.min(...poly.map(p=>p.x)), maxX=Math.max(...poly.map(p=>p.x));
+        let minY=Math.min(...poly.map(p=>p.y)), maxY=Math.max(...poly.map(p=>p.y));
+        for(let y=Math.floor(minY/cellSize); y<=Math.ceil(maxY/cellSize); y++){
+            for(let x=Math.floor(minX/cellSize); x<=Math.ceil(maxX/cellSize); x++){
+                let cx=x*cellSize+cellSize/2, cy=y*cellSize+cellSize/2;
+                if(pointInPolygon({x:cx, y:cy}, poly)){
+                    if(grid[y]&&grid[y][x]!==undefined) grid[y][x]=1;
+                }
+            }
+        }
+    };
+    for(let ob of obstacles) markPolygon(ob.points);
+    for(let wall of walls) markPolygon(wall.points);
+    return {grid,cellSize,cols,rows};
+}
+function pointInPolygon(point, vs) {
+    let x = point.x, y = point.y, inside = false;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i].x, yi = vs[i].y;
+        let xj = vs[j].x, yj = vs[j].y;
+        let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi + 0.00001) + xi);
+        if (intersect) inside = !inside;
+    }
+    return inside;
+}
+
+// --- A* Pathfinding ---
+function astar(start, end, gridObj) {
+    let {grid,cellSize,cols,rows} = gridObj;
+    let node = (x,y,parent,g,h) => ({x,y,parent,g,h,f:g+h});
+    let startCell = {x: Math.floor(start.x/cellSize), y: Math.floor(start.y/cellSize)};
+    let endCell = {x: Math.floor(end.x/cellSize), y: Math.floor(end.y/cellSize)};
+    let open = [node(startCell.x,startCell.y,null,0,
+        Math.abs(startCell.x-endCell.x)+Math.abs(startCell.y-endCell.y))];
+    let closed = new Set();
+    let key = (x,y)=>`${x},${y}`;
+    let dirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    while(open.length){
+        open.sort((a,b)=>a.f-b.f);
+        let cur = open.shift();
+        if(cur.x===endCell.x && cur.y===endCell.y){
+            // Reconstruit le chemin
+            let path = [];
+            while(cur){
+                path.push({x:cur.x*cellSize+cellSize/2, y:cur.y*cellSize+cellSize/2});
+                cur=cur.parent;
+            }
+            return path.reverse();
+        }
+        closed.add(key(cur.x,cur.y));
+        for(let [dx,dy] of dirs){
+            let nx=cur.x+dx, ny=cur.y+dy;
+            if(nx<0||ny<0||nx>=cols||ny>=rows) continue;
+            if(grid[ny][nx]===1) continue;
+            if(closed.has(key(nx,ny))) continue;
+            let ng = cur.g + ((dx*dx+dy*dy)===2?1.41:1);
+            let nh = Math.abs(nx-endCell.x)+Math.abs(ny-endCell.y);
+            let n = node(nx,ny,cur,ng,nh);
+            if(!open.some(o=>o.x===nx&&o.y===ny&&o.f<=n.f)) open.push(n);
+        }
+    }
+    // Pas de chemin trouvé
+    return [start,end];
+}
+
+// --- Génération du chemin ---
 function generateOptimizedPath() {
     if (!chargingStation || zones.length === 0) {
         alert("Ajoute une station de recharge et au moins une zone !");
@@ -454,24 +478,26 @@ function generateOptimizedPath() {
     }
     let path = [];
     let current = { x: chargingStation.x, y: chargingStation.y };
-    let robotDiameter = ROBOT_CONFIG.diameter; // en mètres
+    let robotDiameter = ROBOT_CONFIG.diameter;
+    let gridObj = makeGrid(20); // Grille de 20px
     zones.forEach(zone => {
-        // Si rectangle
         if (zone.points.length === 4) {
             let coverage = generateCoveragePathForRectangle(zone.points, robotDiameter);
-            // Aller du point courant au début de la zone
-            if (path.length === 0 || getDistance(current, coverage[0]) > 0.01) path.push(coverage[0]);
-            for (let p of coverage) path.push(p);
+            // Pathfinding vers début de couverture
+            let seg = astar(current, coverage[0], gridObj);
+            for(let p of seg) path.push(p);
+            for (let i=0;i<coverage.length-1;i++) path.push(coverage[i+1]);
             current = coverage[coverage.length - 1];
         } else {
-            // fallback : va au centre
             let center = getPolygonCenter(zone.points);
-            path.push(center);
+            let seg = astar(current, center, gridObj);
+            for(let p of seg) path.push(p);
             current = center;
         }
     });
     // Retour station
-    path.push({ x: chargingStation.x, y: chargingStation.y });
+    let ret = astar(current, { x: chargingStation.x, y: chargingStation.y }, gridObj);
+    for(let p of ret) path.push(p);
     optimizedPath = path;
     document.getElementById("totalDistance").textContent = computeTotalPathDistance(path).toFixed(2) + " m";
     redraw();
@@ -483,7 +509,6 @@ function computeTotalPathDistance(path){
     return d;
 }
 
-// --- SIMULATION ---
 function simulateRobot(){
     if(!optimizedPath.length){alert("Génère d'abord la trajectoire !");return;}
     simulationActive=true; simulationStep=0;
@@ -491,18 +516,16 @@ function simulateRobot(){
         if(!simulationActive) return;
         redraw();
         simulationStep++;
-        if(simulationStep<optimizedPath.length) setTimeout(step,200);
+        if(simulationStep<optimizedPath.length) setTimeout(step,30); // animation rapide
         else simulationActive=false;
     }
     step();
 }
 
-// --- Initialisation ---
+// --- Init ---
 redraw();
 updateZoneList();
 updateStats();
-
-// Pour accès bouton/HTML
 window.generateOptimizedPath = generateOptimizedPath;
 window.simulateRobot = simulateRobot;
 window.clearAll = clearAll;
