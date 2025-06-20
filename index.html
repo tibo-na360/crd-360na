@@ -1,0 +1,3159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimisateur Robot Aspirateur Avancé</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+        
+        input, select, button {
+            padding: 12px;
+            border: 2px solid #e3e8ef;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .charging-station-btn {
+            background: linear-gradient(135deg, #27ae60, #2ecc71) !important;
+        }
+        
+        .measure-btn {
+            background: linear-gradient(135deg, #f39c12, #e67e22) !important;
+        }
+        
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            min-height: 600px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            cursor: crosshair;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .sidebar {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+        
+        .zone-list {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        .zone-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .zone-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .stats {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        .stats h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .export-btn {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+        
+        .clear-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        
+        .measure-display {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        @media (max-width: 768px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Optimisateur Robot Aspirateur Avancé</h1>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>📁 Import de plan</label>
+                <input type="file" id="fileInput" accept=".dxf,.dwg,.svg,.json,.step,.stp" style="margin-bottom: 10px;">
+                <button onclick="togglePlanGenerator()" style="background: linear-gradient(135deg, #8e44ad, #9b59b6);">
+                    📐 Générateur de Plan
+                </button>
+            </div>
+            
+            <div class="control-group">
+                <label>Échelle et Navigation</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
+                    <input type="number" id="scale" value="50" min="10" max="200" placeholder="Échelle">
+                    <button onclick="zoomIn()" style="font-size: 0.8rem; padding: 8px;">🔍+ Zoom</button>
+                    <button onclick="zoomOut()" style="font-size: 0.8rem; padding: 8px;">🔍- Zoom</button>
+                </div>
+                <button onclick="resetView()" style="margin-top: 5px; font-size: 0.8rem; padding: 8px;">🎯 Centrer</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Forme géométrique</label>
+                <select id="shapeType">
+                    <option value="freehand">Dessin libre</option>
+                    <option value="rectangle">Rectangle</option>
+                    <option value="circle">Cercle</option>
+                    <option value="line">Ligne droite</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Type d'élément</label>
+                <select id="elementType">
+                    <option value="zone">Zone de nettoyage</option>
+                    <option value="obstacle">Obstacle</option>
+                    <option value="wall">Mur/Cloison</option>
+                    <option value="charging">Station de recharge</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Outils rapides</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    <button onclick="setQuickMode('rectangle', 'zone')" style="font-size: 0.8rem; padding: 8px;">📐 Zone Rect.</button>
+                    <button onclick="setQuickMode('circle', 'zone')" style="font-size: 0.8rem; padding: 8px;">⭕ Zone Rond</button>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px;">
+                    <button onclick="setQuickMode('rectangle', 'obstacle')" style="font-size: 0.8rem; padding: 8px;">🚫 Obst. Rect.</button>
+                    <button onclick="setQuickMode('line', 'wall')" style="font-size: 0.8rem; padding: 8px;">📏 Mur</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Outils de mesure</label>
+                <button onclick="toggleMeasureMode()" class="measure-btn" id="measureBtn">
+                    📏 Activer Mesure
+                </button>
+                <div id="measureResult" style="margin-top: 5px; font-size: 0.9em; color: #2c3e50;"></div>
+            </div>
+            
+            <div class="control-group">
+                <label>Priorité et Saleté de zone</label>
+                <select id="priority">
+                    <option value="1">Très haute (Rouge)</option>
+                    <option value="2" selected>Haute (Orange)</option>
+                    <option value="3">Normale (Jaune)</option>
+                    <option value="4">Basse (Vert)</option>
+                    <option value="5">Très basse (Bleu)</option>
+                </select>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px;">
+                    <select id="dirtLevel">
+                        <option value="1">Propre (1 L/m²)</option>
+                        <option value="2">Peu sale (2 L/m²)</option>
+                        <option value="3" selected>Moyennement sale (3 L/m²)</option>
+                        <option value="5">Sale (5 L/m²)</option>
+                        <option value="7">Très sale (7 L/m²)</option>
+                    </select>
+                    <input type="number" id="customDirt" placeholder="Custom L/m²" min="0.1" max="10" step="0.1">
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label>Configuration Robot Avancée</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    <input type="number" id="robotDiameter" value="35" min="20" max="50" placeholder="Diamètre (cm)">
+                    <input type="number" id="robotSpeed" value="15" min="5" max="30" placeholder="Vitesse (m/min)">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px;">
+                    <input type="number" id="tankCapacity" value="350" min="100" max="1000" placeholder="Réservoir (L)">
+                    <input type="number" id="batteryLife" value="90" min="30" max="180" placeholder="Autonomie (min)">
+                </div>
+            </div>
+        </div>
+        
+        <div class="workspace">
+            <div class="canvas-container">
+                <canvas id="canvas" width="900" height="650"></canvas>
+                <div id="measureDisplay" class="measure-display" style="display: none;"></div>
+            </div>
+            
+            <div class="sidebar">
+                <h3>🔋 Station de Recharge</h3>
+                <div id="chargingStationInfo" style="margin-bottom: 20px; padding: 10px; background: #ecf0f1; border-radius: 8px;">
+                    <p style="color: #7f8c8d; font-size: 0.9em;">Cliquez sur "Station de recharge" puis sur le canvas pour placer la station</p>
+                </div>
+                
+                <h3>Éléments définis</h3>
+                <div class="zone-list" id="zoneList"></div>
+                
+                <div class="action-buttons">
+                    <button onclick="generateOptimizedPath()" class="export-btn">🔄 Générer Planning Optimisé</button>
+                    <button onclick="simulateRobot()" style="background: linear-gradient(135deg, #9b59b6, #8e44ad);">
+                        ▶️ Simuler Robot
+                    </button>
+                    <button onclick="showSchedule()" style="background: linear-gradient(135deg, #e67e22, #d35400);">
+                        📅 Planning Quotidien
+                    </button>
+                    <button onclick="showPathLegend()" style="background: linear-gradient(135deg, #34495e, #2c3e50);">
+                        📋 Légende Trajectoire
+                    </button>
+                    <button onclick="clearAll()" class="clear-btn">🗑️ Effacer Tout</button>
+                </div>
+                
+                <div class="stats">
+                    <h3>📊 Statistiques Session Actuelle</h3>
+                    <div class="stat-item">
+                        <span>Surface totale:</span>
+                        <span id="totalArea">0 m²</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Volume saleté:</span>
+                        <span id="totalDirt">0 L</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Distance totale:</span>
+                        <span id="totalDistance">0 m</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Temps nettoyage:</span>
+                        <span id="cleaningTime">0 min</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Temps déplacement:</span>
+                        <span id="movementTime">0 min</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Temps total:</span>
+                        <span id="totalTime">0 min</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Temps de charge:</span>
+                        <span id="chargeTime">0 min</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Sessions/jour:</span>
+                        <span id="sessionsCount">0</span>
+                    </div>
+                </div>
+                
+                <button onclick="exportAdvancedData()" style="width: 100%; margin-top: 15px;" class="export-btn">
+                    💾 Exporter Données Avancées
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration du robot
+        let ROBOT_CONFIG = {
+            diameter: 0.35, // mètres (35cm par défaut)
+            speed: 15, // m/min
+            rotationTime: 2, // secondes pour rotation 180°
+            chargingTime: 5, // minutes pour recharge complète
+            tankCapacity: 350, // litres
+            batteryLife: 90, // minutes
+            chargeRatio: 0.7 // temps de charge = 70% du temps de fonctionnement
+        };
+
+        // Variables globales
+        let canvas, ctx;
+        let zones = [];
+        let obstacles = [];
+        let walls = [];
+        let chargingStation = null;
+        let currentPath = [];
+        let optimizedPath = [];
+        let dailySchedule = [];
+        let isDrawing = false;
+        let currentZone = [];
+        let scale = 50;
+        let measureMode = false;
+        let measureStart = null;
+        let measureEnd = null;
+        let simulationActive = false;
+        let simulationStep = 0;
+        let shapeMode = 'freehand';
+        let shapeStart = null;
+        
+        // Variables de navigation
+        let viewOffset = {x: 0, y: 0};
+        let isDragging = false;
+        let lastMousePos = null;
+        let zoomLevel = 1;
+
+        // Couleurs pour les priorités
+        const PRIORITY_COLORS = {
+            1: '#e74c3c', // Rouge - Très haute
+            2: '#f39c12', // Orange - Haute  
+            3: '#f1c40f', // Jaune - Normale
+            4: '#2ecc71', // Vert - Basse
+            5: '#3498db'  // Bleu - Très basse
+        };
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            
+            setupEventListeners();
+            updateStats();
+            redraw();
+        });
+
+        function setupEventListeners() {
+            canvas.addEventListener('mousedown', handleMouseDown);
+            canvas.addEventListener('mousemove', handleMouseMove);
+            canvas.addEventListener('mouseup', handleMouseUp);
+            canvas.addEventListener('wheel', handleWheel);
+            canvas.addEventListener('contextmenu', e => e.preventDefault());
+            
+            document.getElementById('fileInput').addEventListener('change', handleAdvancedFileImport);
+            
+            document.getElementById('scale').addEventListener('change', function() {
+                scale = parseInt(this.value);
+                redraw();
+                updateStats();
+            });
+            
+            document.getElementById('robotDiameter').addEventListener('change', function() {
+                ROBOT_CONFIG.diameter = parseFloat(this.value) / 100;
+                updateStats();
+            });
+            
+            document.getElementById('robotSpeed').addEventListener('change', function() {
+                ROBOT_CONFIG.speed = parseFloat(this.value);
+                updateStats();
+            });
+            
+            document.getElementById('tankCapacity').addEventListener('change', function() {
+                ROBOT_CONFIG.tankCapacity = parseFloat(this.value);
+                updateStats();
+            });
+            
+            document.getElementById('batteryLife').addEventListener('change', function() {
+                ROBOT_CONFIG.batteryLife = parseFloat(this.value);
+                updateStats();
+            });
+        }
+
+        function setQuickMode(shape, element) {
+            document.getElementById('shapeType').value = shape;
+            document.getElementById('elementType').value = element;
+            shapeMode = shape;
+        }
+
+        function getMousePosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function screenToWorld(screenPoint) {
+            return {
+                x: (screenPoint.x - viewOffset.x) / zoomLevel,
+                y: (screenPoint.y - viewOffset.y) / zoomLevel
+            };
+        }
+
+        function worldToScreen(worldPoint) {
+            return {
+                x: worldPoint.x * zoomLevel + viewOffset.x,
+                y: worldPoint.y * zoomLevel + viewOffset.y
+            };
+        }
+
+        function handleWheel(e) {
+            e.preventDefault();
+            const mousePos = getMousePosition(e);
+            
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = Math.max(0.5, Math.min(5, zoomLevel * zoomFactor));
+            
+            if (newZoom !== zoomLevel) {
+                const zoomChange = newZoom / zoomLevel;
+                viewOffset.x = mousePos.x - (mousePos.x - viewOffset.x) * zoomChange;
+                viewOffset.y = mousePos.y - (mousePos.y - viewOffset.y) * zoomChange;
+                zoomLevel = newZoom;
+                redraw();
+            }
+        }
+
+        function zoomIn() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const newZoom = Math.min(5, zoomLevel * 1.2);
+            const zoomChange = newZoom / zoomLevel;
+            
+            viewOffset.x = centerX - (centerX - viewOffset.x) * zoomChange;
+            viewOffset.y = centerY - (centerY - viewOffset.y) * zoomChange;
+            zoomLevel = newZoom;
+            redraw();
+        }
+
+        function zoomOut() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const newZoom = Math.max(0.5, zoomLevel * 0.8);
+            const zoomChange = newZoom / zoomLevel;
+            
+            viewOffset.x = centerX - (centerX - viewOffset.x) * zoomChange;
+            viewOffset.y = centerY - (centerY - viewOffset.y) * zoomChange;
+            zoomLevel = newZoom;
+            redraw();
+        }
+
+        function resetView() {
+            zoomLevel = 1;
+            viewOffset = {x: 0, y: 0};
+            redraw();
+        }
+
+        function handleMouseDown(e) {
+            const mousePos = getMousePosition(e);
+            const worldPoint = screenToWorld(mousePos);
+            
+            // Pan avec clic droit ou Ctrl+clic
+            if (e.button === 2 || e.ctrlKey) {
+                isDragging = true;
+                lastMousePos = mousePos;
+                canvas.style.cursor = 'grabbing';
+                return;
+            }
+            
+            if (measureMode) {
+                measureStart = worldPoint;
+                measureEnd = null;
+                return;
+            }
+            
+            const elementType = document.getElementById('elementType').value;
+            const shapeType = document.getElementById('shapeType').value;
+            
+            if (elementType === 'charging') {
+                chargingStation = {x: worldPoint.x, y: worldPoint.y, id: Date.now()};
+                updateChargingStationInfo();
+                redraw();
+                return;
+            }
+            
+            // Dessiner la forme
+            shapeMode = shapeType;
+            if (['rectangle', 'circle', 'line'].includes(shapeType)) {
+                shapeStart = worldPoint;
+                isDrawing = true;
+                return;
+            }
+            
+            // Mode dessin libre
+            isDrawing = true;
+            currentZone = [worldPoint];
+        }
+
+        function handleMouseMove(e) {
+            const mousePos = getMousePosition(e);
+            const worldPoint = screenToWorld(mousePos);
+            
+            // Pan mode
+            if (isDragging && lastMousePos) {
+                viewOffset.x += mousePos.x - lastMousePos.x;
+                viewOffset.y += mousePos.y - lastMousePos.y;
+                lastMousePos = mousePos;
+                redraw();
+                return;
+            }
+            
+            if (measureMode && measureStart) {
+                measureEnd = worldPoint;
+                updateMeasureDisplay();
+                redraw();
+                return;
+            }
+            
+            if (!isDrawing) return;
+            
+            if (shapeMode === 'freehand') {
+                currentZone.push(worldPoint);
+                redraw();
+                drawCurrentZone();
+            } else if (['rectangle', 'circle', 'line'].includes(shapeMode) && shapeStart) {
+                redraw();
+                drawPreviewShape(shapeStart, worldPoint, shapeMode);
+            }
+        }
+
+        function handleMouseUp(e) {
+            const mousePos = getMousePosition(e);
+            const worldPoint = screenToWorld(mousePos);
+            
+            if (isDragging) {
+                isDragging = false;
+                lastMousePos = null;
+                canvas.style.cursor = 'crosshair';
+                return;
+            }
+            
+            if (measureMode && measureStart && measureEnd) {
+                const distance = getDistance(measureStart, measureEnd) / scale;
+                document.getElementById('measureResult').textContent = 
+                    `Distance: ${distance.toFixed(2)} m`;
+                return;
+            }
+            
+            if (!isDrawing) return;
+            isDrawing = false;
+            
+            const elementType = document.getElementById('elementType').value;
+            const priority = parseInt(document.getElementById('priority').value);
+            const dirtLevel = parseFloat(document.getElementById('customDirt').value) || 
+                            parseInt(document.getElementById('dirtLevel').value);
+            
+            if (['rectangle', 'circle', 'line'].includes(shapeMode) && shapeStart) {
+                const shape = createGeometricShape(shapeStart, worldPoint, shapeMode);
+                if (shape && shape.length > 2) {
+                    addShapeToLayer(shape, elementType, priority, dirtLevel);
+                }
+                shapeStart = null;
+            } else if (shapeMode === 'freehand' && currentZone.length > 2) {
+                addShapeToLayer(currentZone, elementType, priority, dirtLevel);
+            }
+            
+            currentZone = [];
+            redraw();
+        }
+
+        function setShapeMode(mode) {
+            document.getElementById('shapeType').value = mode;
+            shapeMode = mode;
+        }
+
+        function createGeometricShape(start, end, type) {
+            const points = [];
+            
+            switch(type) {
+                case 'rectangle':
+                    points.push(
+                        {x: start.x, y: start.y},
+                        {x: end.x, y: start.y},
+                        {x: end.x, y: end.y},
+                        {x: start.x, y: end.y}
+                    );
+                    break;
+                    
+                case 'circle':
+                    const centerX = (start.x + end.x) / 2;
+                    const centerY = (start.y + end.y) / 2;
+                    const radius = getDistance(start, end) / 2;
+                    
+                    for (let i = 0; i < 32; i++) {
+                        const angle = (i / 32) * 2 * Math.PI;
+                        points.push({
+                            x: centerX + Math.cos(angle) * radius,
+                            y: centerY + Math.sin(angle) * radius
+                        });
+                    }
+                    break;
+                    
+                case 'line':
+                    const thickness = 10; // pixels
+                    const dx = end.x - start.x;
+                    const dy = end.y - start.y;
+                    const length = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (length > 0) {
+                        const ux = -dy / length * thickness;
+                        const uy = dx / length * thickness;
+                        
+                        points.push(
+                            {x: start.x + ux, y: start.y + uy},
+                            {x: end.x + ux, y: end.y + uy},
+                            {x: end.x - ux, y: end.y - uy},
+                            {x: start.x - ux, y: start.y - uy}
+                        );
+                    }
+                    break;
+            }
+            
+            return points;
+        }
+
+        function drawPreviewShape(start, end, type) {
+            const points = createGeometricShape(start, end, type);
+            if (points.length === 0) return;
+            
+            ctx.save();
+            ctx.translate(viewOffset.x, viewOffset.y);
+            ctx.scale(zoomLevel, zoomLevel);
+            
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 2 / zoomLevel;
+            ctx.setLineDash([5 / zoomLevel, 5 / zoomLevel]);
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.2)';
+            
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.restore();
+        }
+
+        function drawCurrentZone() {
+            if (currentZone.length === 0) return;
+            
+            ctx.save();
+            ctx.translate(viewOffset.x, viewOffset.y);
+            ctx.scale(zoomLevel, zoomLevel);
+            
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 2 / zoomLevel;
+            ctx.setLineDash([5 / zoomLevel, 5 / zoomLevel]);
+            
+            ctx.beginPath();
+            ctx.moveTo(currentZone[0].x, currentZone[0].y);
+            
+            for (let i = 1; i < currentZone.length; i++) {
+                ctx.lineTo(currentZone[i].x, currentZone[i].y);
+            }
+            
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.restore();
+        }
+
+        function addShapeToLayer(points, elementType, priority, dirtLevel) {
+            if (elementType === 'zone') {
+                zones.push({
+                    points: [...points],
+                    priority: priority,
+                    dirtLevel: dirtLevel || 3,
+                    id: Date.now()
+                });
+            } else if (elementType === 'obstacle') {
+                obstacles.push({
+                    points: [...points],
+                    id: Date.now()
+                });
+            } else if (elementType === 'wall') {
+                walls.push({
+                    points: [...points],
+                    id: Date.now()
+                });
+            }
+            
+            updateZoneList();
+            updateStats();
+        }
+
+        function redraw() {
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Appliquer la transformation zoom/pan
+            ctx.translate(viewOffset.x, viewOffset.y);
+            ctx.scale(zoomLevel, zoomLevel);
+            
+            // Dessiner la grille
+            drawGrid();
+            
+            // Dessiner les murs
+            walls.forEach(wall => {
+                ctx.strokeStyle = '#34495e';
+                ctx.lineWidth = 3 / zoomLevel;
+                drawPolygon(wall.points, false);
+            });
+            
+            // Dessiner les obstacles
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = 'rgba(231, 76, 60, 0.7)';
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 2 / zoomLevel;
+                drawPolygon(obstacle.points, true);
+            });
+            
+            // Dessiner les zones avec niveau de saleté
+            zones.forEach(zone => {
+                const baseColor = PRIORITY_COLORS[zone.priority];
+                const alpha = Math.min(0.8, 0.3 + (zone.dirtLevel / 10));
+                ctx.fillStyle = baseColor + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                ctx.strokeStyle = baseColor;
+                ctx.lineWidth = 2 / zoomLevel;
+                drawPolygon(zone.points, true);
+                
+                // Afficher le niveau de saleté au centre
+                const center = getPolygonCenter(zone.points);
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = `${12 / zoomLevel}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText(`${zone.dirtLevel}L/m²`, center.x, center.y);
+            });
+            
+            // Dessiner la station de recharge
+            if (chargingStation) {
+                drawChargingStation(chargingStation);
+            }
+            
+            // Dessiner la trajectoire optimisée
+            if (optimizedPath.length > 0) {
+                drawPath(optimizedPath);
+            }
+            
+            // Dessiner les mesures
+            if (measureMode && measureStart && measureEnd) {
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 2 / zoomLevel;
+                ctx.setLineDash([5 / zoomLevel, 5 / zoomLevel]);
+                ctx.beginPath();
+                ctx.moveTo(measureStart.x, measureStart.y);
+                ctx.lineTo(measureEnd.x, measureEnd.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // Dessiner le robot en simulation
+            if (simulationActive && optimizedPath.length > 0 && simulationStep < optimizedPath.length) {
+                drawRobot(optimizedPath[simulationStep]);
+            }
+            
+            ctx.restore();
+        }
+
+        function getPolygonCenter(points) {
+            let cx = 0, cy = 0;
+            points.forEach(point => {
+                cx += point.x;
+                cy += point.y;
+            });
+            return {
+                x: cx / points.length,
+                y: cy / points.length
+            };
+        }
+
+        function toggleMeasureMode() {
+            measureMode = !measureMode;
+            const btn = document.getElementById('measureBtn');
+            if (measureMode) {
+                btn.textContent = '📏 Désactiver Mesure';
+                btn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+                canvas.style.cursor = 'crosshair';
+            } else {
+                btn.textContent = '📏 Activer Mesure';
+                btn.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
+                canvas.style.cursor = 'crosshair';
+                measureStart = null;
+                measureEnd = null;
+                document.getElementById('measureResult').textContent = '';
+            }
+        }
+
+        function updateMeasureDisplay() {
+            if (!measureStart || !measureEnd) return;
+            
+            const display = document.getElementById('measureDisplay');
+            const distance = getDistance(measureStart, measureEnd) / scale;
+            display.textContent = `${distance.toFixed(2)} m`;
+            display.style.display = 'block';
+            display.style.left = measureEnd.x + 'px';
+            display.style.top = measureEnd.y + 'px';
+        }
+
+        function redraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Dessiner la grille
+            drawGrid();
+            
+            // Dessiner les murs
+            walls.forEach(wall => {
+                ctx.strokeStyle = '#34495e';
+                ctx.lineWidth = 3;
+                drawPolygon(wall.points, false);
+            });
+            
+            // Dessiner les obstacles
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = 'rgba(231, 76, 60, 0.7)';
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 2;
+                drawPolygon(obstacle.points, true);
+            });
+            
+            // Dessiner les zones
+            zones.forEach(zone => {
+                ctx.fillStyle = PRIORITY_COLORS[zone.priority] + '40';
+                ctx.strokeStyle = PRIORITY_COLORS[zone.priority];
+                ctx.lineWidth = 2;
+                drawPolygon(zone.points, true);
+            });
+            
+            // Dessiner la station de recharge
+            if (chargingStation) {
+                drawChargingStation(chargingStation);
+            }
+            
+            // Dessiner la trajectoire optimisée
+            if (optimizedPath.length > 0) {
+                drawPath(optimizedPath);
+            }
+            
+            // Dessiner les mesures
+            if (measureMode && measureStart && measureEnd) {
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(measureStart.x, measureStart.y);
+                ctx.lineTo(measureEnd.x, measureEnd.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // Dessiner le robot en simulation
+            if (simulationActive && optimizedPath.length > 0 && simulationStep < optimizedPath.length) {
+                drawRobot(optimizedPath[simulationStep]);
+            }
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = 1 / zoomLevel;
+            
+            const gridSize = scale;
+            const startX = Math.floor(-viewOffset.x / (gridSize * zoomLevel)) * gridSize;
+            const endX = startX + Math.ceil(canvas.width / zoomLevel) + gridSize;
+            const startY = Math.floor(-viewOffset.y / (gridSize * zoomLevel)) * gridSize;
+            const endY = startY + Math.ceil(canvas.height / zoomLevel) + gridSize;
+            
+            // Lignes verticales
+            for (let x = startX; x < endX; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, startY);
+                ctx.lineTo(x, endY);
+                ctx.stroke();
+            }
+            
+            // Lignes horizontales
+            for (let y = startY; y < endY; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(startX, y);
+                ctx.lineTo(endX, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawPolygon(points, fill) {
+            if (points.length === 0) return;
+            
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            
+            ctx.closePath();
+            
+            if (fill) {
+                ctx.fill();
+            }
+            ctx.stroke();
+        }
+
+        function drawCurrentZone() {
+            if (currentZone.length === 0) return;
+            
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            
+            ctx.beginPath();
+            ctx.moveTo(currentZone[0].x, currentZone[0].y);
+            
+            for (let i = 1; i < currentZone.length; i++) {
+                ctx.lineTo(currentZone[i].x, currentZone[i].y);
+            }
+            
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawChargingStation(station) {
+            ctx.save();
+            ctx.translate(station.x, station.y);
+            
+            // Base de la station
+            ctx.fillStyle = '#2ecc71';
+            ctx.beginPath();
+            ctx.rect(-15, -15, 30, 30);
+            ctx.fill();
+            
+            // Symbole de charge
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('⚡', 0, 5);
+            
+            ctx.restore();
+        }
+
+        function drawPath(path) {
+            if (path.length < 2) return;
+            
+            // Dessiner la trajectoire avec différentes couleurs selon l'action
+            for (let i = 1; i < path.length; i++) {
+                const currentPoint = path[i-1];
+                const nextPoint = path[i];
+                
+                // Couleur selon l'action
+                switch(currentPoint.action) {
+                    case 'MOVE':
+                    case 'MOVE_TO_ZONE':
+                        ctx.strokeStyle = '#3498db'; // Bleu pour déplacement
+                        ctx.lineWidth = 2 / zoomLevel;
+                        ctx.setLineDash([5 / zoomLevel, 5 / zoomLevel]);
+                        break;
+                    case 'CLEAN':
+                        ctx.strokeStyle = '#27ae60'; // Vert pour nettoyage
+                        ctx.lineWidth = 4 / zoomLevel;
+                        ctx.setLineDash([]);
+                        break;
+                    case 'RETURN_TO_CHARGE':
+                        ctx.strokeStyle = '#e74c3c'; // Rouge pour retour
+                        ctx.lineWidth = 3 / zoomLevel;
+                        ctx.setLineDash([10 / zoomLevel, 5 / zoomLevel]);
+                        break;
+                    default:
+                        ctx.strokeStyle = '#9b59b6'; // Violet par défaut
+                        ctx.lineWidth = 2 / zoomLevel;
+                        ctx.setLineDash([]);
+                }
+                
+                ctx.beginPath();
+                ctx.moveTo(currentPoint.x, currentPoint.y);
+                ctx.lineTo(nextPoint.x, nextPoint.y);
+                ctx.stroke();
+            }
+            
+            ctx.setLineDash([]);
+            
+            // Dessiner les points de la trajectoire avec légende
+            path.forEach((point, index) => {
+                let color, size;
+                
+                switch(point.action) {
+                    case 'START':
+                        color = '#2ecc71';
+                        size = 8 / zoomLevel;
+                        break;
+                    case 'CLEAN':
+                        color = '#27ae60';
+                        size = 4 / zoomLevel;
+                        break;
+                    case 'MOVE':
+                    case 'MOVE_TO_ZONE':
+                        color = '#3498db';
+                        size = 3 / zoomLevel;
+                        break;
+                    case 'WAYPOINT':
+                        color = '#f39c12';
+                        size = 5 / zoomLevel;
+                        break;
+                    case 'RETURN_TO_CHARGE':
+                        color = '#e74c3c';
+                        size = 6 / zoomLevel;
+                        break;
+                    default:
+                        color = '#9b59b6';
+                        size = 3 / zoomLevel;
+                }
+                
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, size, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Ajouter un contour blanc pour la visibilité
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1 / zoomLevel;
+                ctx.stroke();
+            });
+        }
+
+        function updateMeasureDisplay() {
+            if (!measureStart || !measureEnd) return;
+            
+            const display = document.getElementById('measureDisplay');
+            const distance = getDistance(measureStart, measureEnd) / scale;
+            display.textContent = `${distance.toFixed(2)} m`;
+            display.style.display = 'block';
+            
+            // Convertir les coordonnées world vers screen pour l'affichage
+            const screenPos = worldToScreen(measureEnd);
+            display.style.left = screenPos.x + 'px';
+            display.style.top = screenPos.y + 'px';
+        }
+
+        function drawRobot(position) {
+            ctx.save();
+            ctx.translate(position.x, position.y);
+            ctx.rotate((position.heading || 0) * Math.PI / 180);
+            
+            // Corps du robot
+            ctx.fillStyle = '#34495e';
+            ctx.beginPath();
+            ctx.arc(0, 0, ROBOT_CONFIG.diameter * scale / 2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Direction du robot
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(ROBOT_CONFIG.diameter * scale / 3, 0, 3, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Brosse rotative
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, ROBOT_CONFIG.diameter * scale / 4, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        function generateOptimizedPath() {
+            if (zones.length === 0) {
+                alert('Veuillez définir au moins une zone de nettoyage.');
+                return;
+            }
+            
+            if (!chargingStation) {
+                alert('Veuillez placer une station de recharge.');
+                return;
+            }
+            
+            // Algorithme optimisé avec pathfinding intelligent
+            const sortedZones = [...zones].sort((a, b) => a.priority - b.priority);
+            optimizedPath = [];
+            let currentPosition = chargingStation;
+            
+            // Partir de la station de recharge
+            optimizedPath.push({
+                ...currentPosition,
+                action: 'START',
+                heading: 0
+            });
+            
+            // Traiter chaque zone par ordre de priorité
+            sortedZones.forEach((zone, zoneIndex) => {
+                // Pathfinding vers la zone
+                const pathToZone = findPathAvoidingWalls(currentPosition, zone.points[0]);
+                optimizedPath = optimizedPath.concat(pathToZone);
+                
+                // Nettoyage de la zone
+                const zonePath = generateLinearZonePath(zone, pathToZone[pathToZone.length - 1]);
+                optimizedPath = optimizedPath.concat(zonePath);
+                currentPosition = zonePath[zonePath.length - 1];
+            });
+            
+            // Retourner à la station de recharge avec pathfinding
+            const pathToCharge = findPathAvoidingWalls(currentPosition, chargingStation);
+            pathToCharge[pathToCharge.length - 1].action = 'RETURN_TO_CHARGE';
+            optimizedPath = optimizedPath.concat(pathToCharge);
+            
+            currentPath = optimizedPath;
+            updateAdvancedStats();
+            redraw();
+        }
+
+        // Algorithme de pathfinding simplifié (A* basique)
+        function findPathAvoidingWalls(start, end) {
+            const robotRadius = (ROBOT_CONFIG.diameter / 2) * scale;
+            const path = [];
+            
+            // Vérifier si le chemin direct est libre
+            if (isPathClear(start, end, robotRadius)) {
+                path.push({
+                    ...start,
+                    action: 'MOVE',
+                    heading: calculateHeading(start, end)
+                });
+                path.push({
+                    ...end,
+                    action: 'ARRIVE',
+                    heading: calculateHeading(start, end)
+                });
+                return path;
+            }
+            
+            // Sinon, utiliser des points de passage
+            const waypoints = findWaypoints(start, end, robotRadius);
+            let currentPos = start;
+            
+            waypoints.forEach((waypoint, index) => {
+                path.push({
+                    ...currentPos,
+                    action: 'MOVE',
+                    heading: calculateHeading(currentPos, waypoint)
+                });
+                path.push({
+                    ...waypoint,
+                    action: index === waypoints.length - 1 ? 'ARRIVE' : 'WAYPOINT',
+                    heading: calculateHeading(currentPos, waypoint)
+                });
+                currentPos = waypoint;
+            });
+            
+            return path;
+        }
+
+        function isPathClear(start, end, robotRadius) {
+            const steps = 20;
+            const dx = (end.x - start.x) / steps;
+            const dy = (end.y - start.y) / steps;
+            
+            for (let i = 0; i <= steps; i++) {
+                const testPoint = {
+                    x: start.x + dx * i,
+                    y: start.y + dy * i
+                };
+                
+                if (isPointInObstacle(testPoint, robotRadius)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function isPointInObstacle(point, radius) {
+            // Vérifier collision avec les murs
+            for (let wall of walls) {
+                if (isPointNearPolygon(point, wall.points, radius)) {
+                    return true;
+                }
+            }
+            
+            // Vérifier collision avec les obstacles
+            for (let obstacle of obstacles) {
+                if (isPointInPolygon(point, obstacle.points)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        function isPointNearPolygon(point, polygonPoints, minDistance) {
+            // Vérifier la distance minimum aux bords du polygone
+            for (let i = 0; i < polygonPoints.length; i++) {
+                const p1 = polygonPoints[i];
+                const p2 = polygonPoints[(i + 1) % polygonPoints.length];
+                
+                const dist = distancePointToLineSegment(point, p1, p2);
+                if (dist < minDistance) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function distancePointToLineSegment(point, lineStart, lineEnd) {
+            const dx = lineEnd.x - lineStart.x;
+            const dy = lineEnd.y - lineStart.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            
+            if (length === 0) {
+                return getDistance(point, lineStart);
+            }
+            
+            const t = Math.max(0, Math.min(1, ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / (length * length)));
+            const projection = {
+                x: lineStart.x + t * dx,
+                y: lineStart.y + t * dy
+            };
+            
+            return getDistance(point, projection);
+        }
+
+        function findWaypoints(start, end, robotRadius) {
+            const waypoints = [];
+            const margin = robotRadius * 2;
+            
+            // Stratégie simple : contourner les obstacles principaux
+            const midPoint = {
+                x: (start.x + end.x) / 2,
+                y: (start.y + end.y) / 2
+            };
+            
+            // Essayer différents points de contournement
+            const candidates = [
+                {x: midPoint.x, y: start.y}, // Horizontal puis vertical
+                {x: start.x, y: midPoint.y}, // Vertical puis horizontal
+                {x: midPoint.x + margin, y: midPoint.y}, // Décalages
+                {x: midPoint.x - margin, y: midPoint.y},
+                {x: midPoint.x, y: midPoint.y + margin},
+                {x: midPoint.x, y: midPoint.y - margin}
+            ];
+            
+            for (let candidate of candidates) {
+                if (!isPointInObstacle(candidate, robotRadius) &&
+                    isPathClear(start, candidate, robotRadius) &&
+                    isPathClear(candidate, end, robotRadius)) {
+                    waypoints.push(candidate);
+                    break;
+                }
+            }
+            
+            // Si aucun waypoint trouvé, ajouter le point final
+            if (waypoints.length === 0) {
+                waypoints.push(end);
+            } else {
+                waypoints.push(end);
+            }
+            
+            return waypoints;
+        }
+
+        function isPointInPolygon(point, polygonPoints) {
+            let inside = false;
+            for (let i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i++) {
+                if (((polygonPoints[i].y > point.y) !== (polygonPoints[j].y > point.y)) &&
+                    (point.x < (polygonPoints[j].x - polygonPoints[i].x) * (point.y - polygonPoints[i].y) / (polygonPoints[j].y - polygonPoints[i].y) + polygonPoints[i].x)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        function generateLinearZonePath(zone, startPos) {
+            const bounds = getZoneBounds(zone.points);
+            const robotRadius = (ROBOT_CONFIG.diameter / 2) * scale;
+            const lineSpacing = robotRadius * 1.2; // Espacement optimal
+            
+            // Déterminer la direction optimale selon la forme de la zone
+            const width = bounds.maxX - bounds.minX;
+            const height = bounds.maxY - bounds.minY;
+            const isHorizontalOptimal = width > height;
+            
+            const path = [];
+            
+            // Point d'entrée dans la zone
+            const entryPoint = findClosestPointToZone(zone.points, startPos);
+            path.push({
+                ...entryPoint,
+                action: 'MOVE_TO_ZONE',
+                heading: calculateHeading(startPos, entryPoint)
+            });
+            
+            if (isHorizontalOptimal) {
+                // Trajectoire horizontale (plus efficace pour zones larges)
+                generateHorizontalPattern(zone, bounds, robotRadius, lineSpacing, path);
+            } else {
+                // Trajectoire verticale (plus efficace pour zones hautes)
+                generateVerticalPattern(zone, bounds, robotRadius, lineSpacing, path);
+            }
+            
+            return path;
+        }
+
+        function generateHorizontalPattern(zone, bounds, robotRadius, lineSpacing, path) {
+            let currentY = bounds.minY + robotRadius;
+            let goingRight = true;
+            
+            while (currentY < bounds.maxY - robotRadius) {
+                const intersections = getLineIntersections(zone.points, currentY);
+                
+                if (intersections.length >= 2) {
+                    intersections.sort((a, b) => a.x - b.x);
+                    
+                    if (goingRight) {
+                        path.push({
+                            x: intersections[0].x + robotRadius,
+                            y: currentY,
+                            action: 'CLEAN',
+                            heading: 0
+                        });
+                        path.push({
+                            x: intersections[intersections.length - 1].x - robotRadius,
+                            y: currentY,
+                            action: 'CLEAN',
+                            heading: 0
+                        });
+                    } else {
+                        path.push({
+                            x: intersections[intersections.length - 1].x - robotRadius,
+                            y: currentY,
+                            action: 'CLEAN',
+                            heading: 180
+                        });
+                        path.push({
+                            x: intersections[0].x + robotRadius,
+                            y: currentY,
+                            action: 'CLEAN',
+                            heading: 180
+                        });
+                    }
+                    
+                    goingRight = !goingRight;
+                    
+                    if (currentY + lineSpacing < bounds.maxY - robotRadius) {
+                        path.push({
+                            x: path[path.length - 1].x,
+                            y: currentY + lineSpacing,
+                            action: 'ROTATE_AND_ADVANCE',
+                            heading: goingRight ? 0 : 180
+                        });
+                    }
+                }
+                
+                currentY += lineSpacing;
+            }
+        }
+
+        function generateVerticalPattern(zone, bounds, robotRadius, lineSpacing, path) {
+            let currentX = bounds.minX + robotRadius;
+            let goingDown = true;
+            
+            while (currentX < bounds.maxX - robotRadius) {
+                const intersections = getVerticalLineIntersections(zone.points, currentX);
+                
+                if (intersections.length >= 2) {
+                    intersections.sort((a, b) => a.y - b.y);
+                    
+                    if (goingDown) {
+                        path.push({
+                            x: currentX,
+                            y: intersections[0].y + robotRadius,
+                            action: 'CLEAN',
+                            heading: 270
+                        });
+                        path.push({
+                            x: currentX,
+                            y: intersections[intersections.length - 1].y - robotRadius,
+                            action: 'CLEAN',
+                            heading: 270
+                        });
+                    } else {
+                        path.push({
+                            x: currentX,
+                            y: intersections[intersections.length - 1].y - robotRadius,
+                            action: 'CLEAN',
+                            heading: 90
+                        });
+                        path.push({
+                            x: currentX,
+                            y: intersections[0].y + robotRadius,
+                            action: 'CLEAN',
+                            heading: 90
+                        });
+                    }
+                    
+                    goingDown = !goingDown;
+                    
+                    if (currentX + lineSpacing < bounds.maxX - robotRadius) {
+                        path.push({
+                            x: currentX + lineSpacing,
+                            y: path[path.length - 1].y,
+                            action: 'ROTATE_AND_ADVANCE',
+                            heading: goingDown ? 270 : 90
+                        });
+                    }
+                }
+                
+                currentX += lineSpacing;
+            }
+        }
+
+        function getVerticalLineIntersections(points, x) {
+            const intersections = [];
+            
+            for (let i = 0; i < points.length; i++) {
+                const p1 = points[i];
+                const p2 = points[(i + 1) % points.length];
+                
+                if ((p1.x <= x && p2.x >= x) || (p1.x >= x && p2.x <= x)) {
+                    if (p1.x !== p2.x) {
+                        const y = p1.y + (x - p1.x) * (p2.y - p1.y) / (p2.x - p1.x);
+                        intersections.push({ x, y });
+                    }
+                }
+            }
+            
+            return intersections;
+        }
+
+        function generateOptimizedPath() {
+            if (zones.length === 0) {
+                alert('Veuillez définir au moins une zone de nettoyage.');
+                return;
+            }
+            
+            if (!chargingStation) {
+                alert('Veuillez placer une station de recharge.');
+                return;
+            }
+            
+            // Calculer les sessions en fonction du réservoir et de la batterie
+            const sessions = planCleaningSessions();
+            dailySchedule = sessions;
+            
+            // Générer la première session
+            generateSingleSession(sessions[0]);
+            
+            updateAdvancedStats();
+            redraw();
+        }
+
+        function planCleaningSessions() {
+            const sessions = [];
+            let remainingZones = [...zones];
+            let sessionNumber = 1;
+            
+            while (remainingZones.length > 0) {
+                const session = {
+                    number: sessionNumber,
+                    zones: [],
+                    totalVolume: 0,
+                    totalArea: 0,
+                    estimatedTime: 0
+                };
+                
+                // Trier les zones par priorité
+                remainingZones.sort((a, b) => a.priority - b.priority);
+                
+                // Ajouter des zones tant que le réservoir et la batterie le permettent
+                for (let i = 0; i < remainingZones.length; i++) {
+                    const zone = remainingZones[i];
+                    const area = calculatePolygonArea(zone.points) / (scale * scale);
+                    const volume = area * zone.dirtLevel;
+                    const timeForZone = area * 2; // 2 min/m²
+                    
+                    if (session.totalVolume + volume <= ROBOT_CONFIG.tankCapacity &&
+                        session.estimatedTime + timeForZone <= ROBOT_CONFIG.batteryLife) {
+                        
+                        session.zones.push(zone);
+                        session.totalVolume += volume;
+                        session.totalArea += area;
+                        session.estimatedTime += timeForZone;
+                        remainingZones.splice(i, 1);
+                        i--; // Ajuster l'index après suppression
+                    }
+                }
+                
+                if (session.zones.length > 0) {
+                    sessions.push(session);
+                    sessionNumber++;
+                } else {
+                    break; // Éviter boucle infinie si une zone est trop grande
+                }
+            }
+            
+            return sessions;
+        }
+
+        function generateSingleSession(session) {
+            optimizedPath = [];
+            let currentPosition = chargingStation;
+            
+            // Partir de la station de recharge
+            optimizedPath.push({
+                ...currentPosition,
+                action: 'START',
+                heading: 0
+            });
+            
+            // Traiter chaque zone de la session
+            session.zones.forEach((zone, zoneIndex) => {
+                // Pathfinding vers la zone
+                const pathToZone = findPathAvoidingWalls(currentPosition, zone.points[0]);
+                optimizedPath = optimizedPath.concat(pathToZone);
+                
+                // Nettoyage de la zone
+                const zonePath = generateLinearZonePath(zone, pathToZone[pathToZone.length - 1]);
+                optimizedPath = optimizedPath.concat(zonePath);
+                currentPosition = zonePath[zonePath.length - 1];
+            });
+            
+            // Retourner à la station de recharge
+            const pathToCharge = findPathAvoidingWalls(currentPosition, chargingStation);
+            pathToCharge[pathToCharge.length - 1].action = 'RETURN_TO_CHARGE';
+            optimizedPath = optimizedPath.concat(pathToCharge);
+            
+            currentPath = optimizedPath;
+        }
+
+        function simulateRobot() {
+            if (optimizedPath.length === 0) {
+                alert('Veuillez d\'abord générer une trajectoire optimisée.');
+                return;
+            }
+            
+            if (simulationActive) {
+                simulationActive = false;
+                simulationStep = 0;
+                redraw();
+                return;
+            }
+            
+            simulationActive = true;
+            simulationStep = 0;
+            const simulationSpeed = 200; // ms entre chaque étape
+            
+            function animateStep() {
+                if (!simulationActive || simulationStep >= optimizedPath.length) {
+                    simulationActive = false;
+                    alert('Simulation terminée !');
+                    return;
+                }
+                
+                redraw();
+                simulationStep++;
+                
+                setTimeout(animateStep, simulationSpeed);
+            }
+            
+            animateStep();
+        }
+
+        // Fonctions utilitaires
+        function getDistance(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+        function getZoneBounds(points) {
+            let minX = Infinity, minY = Infinity;
+            let maxX = -Infinity, maxY = -Infinity;
+            
+            points.forEach(point => {
+                minX = Math.min(minX, point.x);
+                maxX = Math.max(maxX, point.x);
+                minY = Math.min(minY, point.y);
+        function getLineIntersections(points, y) {
+            const intersections = [];
+            
+            for (let i = 0; i < points.length; i++) {
+                const p1 = points[i];
+                const p2 = points[(i + 1) % points.length];
+                
+                if ((p1.y <= y && p2.y >= y) || (p1.y >= y && p2.y <= y)) {
+                    if (p1.y !== p2.y) {
+                        const x = p1.x + (y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y);
+                        intersections.push({ x, y });
+                    }
+                }
+            }
+            
+            return intersections;
+        }
+
+        function findClosestPointToZone(zonePoints, startPos) {
+            let closestPoint = zonePoints[0];
+            let minDistance = getDistance(startPos, closestPoint);
+            
+            zonePoints.forEach(point => {
+                const distance = getDistance(startPos, point);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestPoint = point;
+                }
+            });
+            
+            return closestPoint;
+        }
+
+        function calculateHeading(from, to) {
+            const dx = to.x - from.x;
+            const dy = to.y - from.y;
+            let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            return (angle + 360) % 360;
+        }
+
+        function getVerticalLineIntersections(points, x) {
+            const intersections = [];
+            
+            for (let i = 0; i < points.length; i++) {
+                const p1 = points[i];
+                const p2 = points[(i + 1) % points.length];
+                
+                if ((p1.x <= x && p2.x >= x) || (p1.x >= x && p2.x <= x)) {
+                    if (p1.x !== p2.x) {
+                        const y = p1.y + (x - p1.x) * (p2.y - p1.y) / (p2.x - p1.x);
+                        intersections.push({ x, y });
+                    }
+                }
+            }
+            
+            return intersections;
+        }
+
+        function isPointInObstacle(point, radius) {
+            // Vérifier collision avec les murs
+            for (let wall of walls) {
+                if (isPointNearPolygon(point, wall.points, radius)) {
+                    return true;
+                }
+            }
+            
+            // Vérifier collision avec les obstacles
+            for (let obstacle of obstacles) {
+                if (isPointInPolygon(point, obstacle.points)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        function isPointNearPolygon(point, polygonPoints, minDistance) {
+            for (let i = 0; i < polygonPoints.length; i++) {
+                const p1 = polygonPoints[i];
+                const p2 = polygonPoints[(i + 1) % polygonPoints.length];
+                
+                const dist = distancePointToLineSegment(point, p1, p2);
+                if (dist < minDistance) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function distancePointToLineSegment(point, lineStart, lineEnd) {
+            const dx = lineEnd.x - lineStart.x;
+            const dy = lineEnd.y - lineStart.y;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            
+            if (length === 0) {
+                return getDistance(point, lineStart);
+            }
+            
+            const t = Math.max(0, Math.min(1, ((point.x - lineStart.x) * dx + (point.y - lineStart.y) * dy) / (length * length)));
+            const projection = {
+                x: lineStart.x + t * dx,
+                y: lineStart.y + t * dy
+            };
+            
+            return getDistance(point, projection);
+        }
+
+        function isPointInPolygon(point, polygonPoints) {
+            let inside = false;
+            for (let i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i++) {
+                if (((polygonPoints[i].y > point.y) !== (polygonPoints[j].y > point.y)) &&
+                    (point.x < (polygonPoints[j].x - polygonPoints[i].x) * (point.y - polygonPoints[i].y) / (polygonPoints[j].y - polygonPoints[i].y) + polygonPoints[i].x)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        function isPathClear(start, end, robotRadius) {
+            const steps = 20;
+            const dx = (end.x - start.x) / steps;
+            const dy = (end.y - start.y) / steps;
+            
+            for (let i = 0; i <= steps; i++) {
+                const testPoint = {
+                    x: start.x + dx * i,
+                    y: start.y + dy * i
+                };
+                
+                if (isPointInObstacle(testPoint, robotRadius)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function findWaypoints(start, end, robotRadius) {
+            const waypoints = [];
+            const margin = robotRadius * 2;
+            
+            const midPoint = {
+                x: (start.x + end.x) / 2,
+                y: (start.y + end.y) / 2
+            };
+            
+            const candidates = [
+                {x: midPoint.x, y: start.y},
+                {x: start.x, y: midPoint.y},
+                {x: midPoint.x + margin, y: midPoint.y},
+                {x: midPoint.x - margin, y: midPoint.y},
+                {x: midPoint.x, y: midPoint.y + margin},
+                {x: midPoint.x, y: midPoint.y - margin}
+            ];
+            
+            for (let candidate of candidates) {
+                if (!isPointInObstacle(candidate, robotRadius) &&
+                    isPathClear(start, candidate, robotRadius) &&
+                    isPathClear(candidate, end, robotRadius)) {
+                    waypoints.push(candidate);
+                    break;
+                }
+            }
+            
+            if (waypoints.length === 0) {
+                waypoints.push(end);
+            } else {
+                waypoints.push(end);
+            }
+            
+        function generateHorizontalPattern(zone, bounds, robotRadius, lineSpacing, path) {
+            let currentY = bounds.minY + robotRadius;
+            let goingRight = true;
+            
+            while (currentY < bounds.maxY - robotRadius) {
+                const intersections = getLineIntersections(zone.points, currentY);
+                
+                if (intersections.length >= 2) {
+                    intersections.sort((a, b) => a.x - b.x);
+                    
+                    if (goingRight) {
+                        path.push({
+                            x: intersections[0].x + robotRadius,
+                            y: currentY,
+                            action: 'CLEAN',
+                            heading: 0
+                        });
+                        path.push({
+                            x: intersections[intersections.length - 1].x - robotRadius,
+                            y: currentY,
+                            action: 'CLEAN',
+                            heading: 0
+                        });
+                    } else {
+                        path.push({
+                            x: intersections[intersections.length - 1].x - robotRadius,
+                            y: currentY,
+                            action: 'CLEAN',
+                            heading: 180
+                        });
+                        path.push({
+                            x: intersections[0].x + robotRadius,
+                            y: currentY,
+                            action: 'CLEAN',
+                            heading: 180
+                        });
+                    }
+                    
+                    goingRight = !goingRight;
+                    
+                    if (currentY + lineSpacing < bounds.maxY - robotRadius) {
+                        path.push({
+                            x: path[path.length - 1].x,
+                            y: currentY + lineSpacing,
+                            action: 'ROTATE_AND_ADVANCE',
+                            heading: goingRight ? 0 : 180
+                        });
+                    }
+                }
+                
+                currentY += lineSpacing;
+            }
+        }
+
+        function generateVerticalPattern(zone, bounds, robotRadius, lineSpacing, path) {
+            let currentX = bounds.minX + robotRadius;
+            let goingDown = true;
+            
+            while (currentX < bounds.maxX - robotRadius) {
+                const intersections = getVerticalLineIntersections(zone.points, currentX);
+                
+                if (intersections.length >= 2) {
+                    intersections.sort((a, b) => a.y - b.y);
+                    
+                    if (goingDown) {
+                        path.push({
+                            x: currentX,
+                            y: intersections[0].y + robotRadius,
+                            action: 'CLEAN',
+                            heading: 270
+                        });
+                        path.push({
+                            x: currentX,
+                            y: intersections[intersections.length - 1].y - robotRadius,
+                            action: 'CLEAN',
+                            heading: 270
+                        });
+                    } else {
+                        path.push({
+                            x: currentX,
+                            y: intersections[intersections.length - 1].y - robotRadius,
+                            action: 'CLEAN',
+                            heading: 90
+                        });
+                        path.push({
+                            x: currentX,
+                            y: intersections[0].y + robotRadius,
+                            action: 'CLEAN',
+                            heading: 90
+                        });
+                    }
+                    
+                    goingDown = !goingDown;
+                    
+                    if (currentX + lineSpacing < bounds.maxX - robotRadius) {
+                        path.push({
+                            x: currentX + lineSpacing,
+                            y: path[path.length - 1].y,
+                            action: 'ROTATE_AND_ADVANCE',
+                            heading: goingDown ? 270 : 90
+                        });
+                    }
+                }
+                
+                currentX += lineSpacing;
+            }
+        }
+
+        function calculatePolygonArea(points) {
+            if (points.length < 3) return 0;
+            
+            let area = 0;
+            for (let i = 0; i < points.length; i++) {
+                const j = (i + 1) % points.length;
+                area += points[i].x * points[j].y;
+                area -= points[j].x * points[i].y;
+            }
+            return Math.abs(area) / 2;
+        }
+
+        function updateZoneList() {
+            const zoneList = document.getElementById('zoneList');
+            zoneList.innerHTML = '';
+            
+            // Zones de nettoyage
+            zones.forEach((zone, index) => {
+                const area = calculatePolygonArea(zone.points) / (scale * scale);
+                const dirtVolume = area * (zone.dirtLevel || 3);
+                const zoneItem = document.createElement('div');
+                zoneItem.className = 'zone-item';
+                zoneItem.innerHTML = `
+                    <div>
+                        <strong>Zone ${index + 1}</strong><br>
+                        <small>Priorité: ${zone.priority} | ${area.toFixed(1)} m² | ${zone.dirtLevel || 3}L/m²</small><br>
+                        <small style="color: #e67e22;">Volume: ${dirtVolume.toFixed(1)}L</small>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="editZone(${index})" style="background: #3498db; color: white; border: none; padding: 3px 6px; border-radius: 3px; cursor: pointer; font-size: 11px;">✏️</button>
+                        <button onclick="removeZone(${index}, 'zone')" style="background: #e74c3c; color: white; border: none; padding: 3px 6px; border-radius: 3px; cursor: pointer; font-size: 11px;">×</button>
+                    </div>
+                `;
+                zoneItem.style.borderLeft = `4px solid ${PRIORITY_COLORS[zone.priority]}`;
+                zoneList.appendChild(zoneItem);
+            });
+            
+            // Obstacles
+            obstacles.forEach((obstacle, index) => {
+                const zoneItem = document.createElement('div');
+                zoneItem.className = 'zone-item';
+                zoneItem.innerHTML = `
+                    <div>
+                        <strong>Obstacle ${index + 1}</strong><br>
+                        <small>Type: Obstacle physique</small>
+                    </div>
+                    <button onclick="removeZone(${index}, 'obstacle')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">×</button>
+                `;
+                zoneItem.style.borderLeft = '4px solid #e74c3c';
+                zoneList.appendChild(zoneItem);
+            });
+            
+            // Murs
+            walls.forEach((wall, index) => {
+                const zoneItem = document.createElement('div');
+                zoneItem.className = 'zone-item';
+                zoneItem.innerHTML = `
+                    <div>
+                        <strong>Mur ${index + 1}</strong><br>
+                        <small>Type: ${wall.source || 'Manuel'}</small>
+                    </div>
+                    <button onclick="removeZone(${index}, 'wall')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">×</button>
+                `;
+                zoneItem.style.borderLeft = '4px solid #34495e';
+                zoneList.appendChild(zoneItem);
+            });
+        }
+
+        function editZone(index) {
+            const zone = zones[index];
+            const area = calculatePolygonArea(zone.points) / (scale * scale);
+            
+            const editHTML = `
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                           background: white; padding: 30px; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                           z-index: 10000; max-width: 400px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <h3 style="margin: 0 0 20px 0; color: #2c3e50; text-align: center;">✏️ Modifier Zone ${index + 1}</h3>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Priorité:</label>
+                        <select id="editPriority" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            <option value="1" ${zone.priority === 1 ? 'selected' : ''}>Très haute (Rouge)</option>
+                            <option value="2" ${zone.priority === 2 ? 'selected' : ''}>Haute (Orange)</option>
+                            <option value="3" ${zone.priority === 3 ? 'selected' : ''}>Normale (Jaune)</option>
+                            <option value="4" ${zone.priority === 4 ? 'selected' : ''}>Basse (Vert)</option>
+                            <option value="5" ${zone.priority === 5 ? 'selected' : ''}>Très basse (Bleu)</option>
+                        </select>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #2c3e50;">Niveau de saleté (L/m²):</label>
+                        <input type="number" id="editDirtLevel" value="${zone.dirtLevel || 3}" min="0.1" max="10" step="0.1" 
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 14px;">📊 Informations zone:</h4>
+                        <div style="font-size: 13px; color: #7f8c8d;">
+                            <div>Surface: <strong>${area.toFixed(1)} m²</strong></div>
+                            <div>Volume actuel: <strong>${(area * (zone.dirtLevel || 3)).toFixed(1)} L</strong></div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button onclick="cancelEdit()" 
+                                style="width: 100%; padding: 12px; background: #95a5a6; 
+                                       color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            ❌ Annuler
+                        </button>
+                        <button onclick="saveZoneEdit(${index})" 
+                                style="width: 100%; padding: 12px; background: linear-gradient(135deg, #27ae60, #2ecc71); 
+                                       color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            ✅ Sauvegarder
+                        </button>
+                    </div>
+                </div>
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                           background: rgba(0,0,0,0.5); z-index: 9999;" onclick="cancelEdit();"></div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', editHTML);
+        }
+
+        function saveZoneEdit(index) {
+            const newPriority = parseInt(document.getElementById('editPriority').value);
+            const newDirtLevel = parseFloat(document.getElementById('editDirtLevel').value);
+            
+            zones[index].priority = newPriority;
+            zones[index].dirtLevel = newDirtLevel;
+            
+            updateZoneList();
+            updateStats();
+            redraw();
+            cancelEdit();
+        }
+
+        function cancelEdit() {
+            const dialogs = document.querySelectorAll('div[style*="position: fixed"][style*="z-index: 10000"]');
+            const backgrounds = document.querySelectorAll('div[style*="position: fixed"][style*="z-index: 9999"]');
+            dialogs.forEach(dialog => dialog.remove());
+            backgrounds.forEach(bg => bg.remove());
+        }
+
+        function removeZone(index, type) {
+            if (type === 'zone') {
+                zones.splice(index, 1);
+            } else if (type === 'obstacle') {
+                obstacles.splice(index, 1);
+            } else if (type === 'wall') {
+                walls.splice(index, 1);
+            }
+            
+            updateZoneList();
+            updateStats();
+            redraw();
+        }
+
+        function updateChargingStationInfo() {
+            const info = document.getElementById('chargingStationInfo');
+            if (chargingStation) {
+                const x = (chargingStation.x / scale).toFixed(1);
+                const y = ((canvas.height - chargingStation.y) / scale).toFixed(1);
+                info.innerHTML = `
+                    <p style="color: #27ae60; font-weight: bold;">✅ Station placée</p>
+                    <p style="font-size: 0.8em; color: #7f8c8d;">Position: (${x}m, ${y}m)</p>
+                    <button onclick="removeChargingStation()" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px;">Supprimer</button>
+                `;
+            } else {
+                info.innerHTML = `
+                    <p style="color: #7f8c8d; font-size: 0.9em;">Cliquez sur "Station de recharge" puis sur le canvas pour placer la station</p>
+                `;
+            }
+        }
+
+        function removeChargingStation() {
+            chargingStation = null;
+            updateChargingStationInfo();
+            redraw();
+        }
+
+        function updateStats() {
+            let totalArea = 0;
+            let totalDirt = 0;
+            let totalDistance = 0;
+            let rotationCount = 0;
+            
+            // Calculer la surface totale et le volume de saleté
+            zones.forEach(zone => {
+                const area = calculatePolygonArea(zone.points) / (scale * scale);
+                totalArea += area;
+                totalDirt += area * (zone.dirtLevel || 3);
+            });
+            
+            // Calculer la distance totale de la trajectoire
+            if (optimizedPath.length > 1) {
+                for (let i = 1; i < optimizedPath.length; i++) {
+                    totalDistance += getDistance(optimizedPath[i-1], optimizedPath[i]) / scale;
+                }
+                
+                // Compter les rotations
+                optimizedPath.forEach(point => {
+                    if (point.action === 'ROTATE_AND_ADVANCE') {
+                        rotationCount++;
+                    }
+                });
+            }
+            
+            const cleaningTime = totalArea * 2; // 2 min/m² estimation
+            const movementTime = totalDistance / ROBOT_CONFIG.speed;
+            const rotationTime = rotationCount * (ROBOT_CONFIG.rotationTime / 60);
+            const totalTime = cleaningTime + movementTime + rotationTime;
+            const chargeTime = totalTime * ROBOT_CONFIG.chargeRatio;
+            const sessionsCount = dailySchedule.length;
+            
+            document.getElementById('totalArea').textContent = `${totalArea.toFixed(1)} m²`;
+            document.getElementById('totalDirt').textContent = `${totalDirt.toFixed(1)} L`;
+            document.getElementById('totalDistance').textContent = `${totalDistance.toFixed(1)} m`;
+            document.getElementById('cleaningTime').textContent = `${cleaningTime.toFixed(0)} min`;
+            document.getElementById('movementTime').textContent = `${movementTime.toFixed(0)} min`;
+            document.getElementById('totalTime').textContent = `${totalTime.toFixed(0)} min`;
+            document.getElementById('chargeTime').textContent = `${chargeTime.toFixed(0)} min`;
+            document.getElementById('sessionsCount').textContent = sessionsCount;
+        }
+
+        function showSchedule() {
+            if (dailySchedule.length === 0) {
+                alert('Veuillez d\'abord générer un planning optimisé.');
+                return;
+            }
+            
+            let scheduleHTML = `
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                           background: white; padding: 30px; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                           z-index: 10000; max-width: 600px; max-height: 80vh; overflow-y: auto;
+                           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <h3 style="margin: 0 0 20px 0; color: #2c3e50; text-align: center;">📅 Planning Quotidien Optimisé</h3>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">📊 Résumé Global</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+                            <div>• Sessions par jour: <strong>${dailySchedule.length}</strong></div>
+                            <div>• Réservoir: <strong>${ROBOT_CONFIG.tankCapacity}L</strong></div>
+                            <div>• Autonomie: <strong>${ROBOT_CONFIG.batteryLife} min</strong></div>
+                            <div>• Temps charge: <strong>${(ROBOT_CONFIG.batteryLife * ROBOT_CONFIG.chargeRatio).toFixed(0)} min</strong></div>
+                        </div>
+                    </div>
+            `;
+            
+            let currentTime = 8 * 60; // Commencer à 8h00
+            
+            dailySchedule.forEach((session, index) => {
+                const startHour = Math.floor(currentTime / 60);
+                const startMin = currentTime % 60;
+                const sessionDuration = session.estimatedTime;
+                const chargeDuration = sessionDuration * ROBOT_CONFIG.chargeRatio;
+                
+                const endTime = currentTime + sessionDuration;
+                const endHour = Math.floor(endTime / 60);
+                const endMinute = endTime % 60;
+                
+                const chargeEndTime = endTime + chargeDuration;
+                const chargeEndHour = Math.floor(chargeEndTime / 60);
+                const chargeEndMinute = chargeEndTime % 60;
+                
+                scheduleHTML += `
+                    <div style="border: 1px solid #e3e8ef; border-radius: 10px; margin-bottom: 15px; overflow: hidden;">
+                        <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px;">
+                            <h4 style="margin: 0; display: flex; justify-content: space-between;">
+                                <span>🧹 Session ${session.number}</span>
+                                <span>${String(startHour).padStart(2, '0')}:${String(startMin).padStart(2, '0')} - ${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}</span>
+                            </h4>
+                        </div>
+                        <div style="padding: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 13px; color: #7f8c8d;">
+                                <div>📐 Surface: <strong>${session.totalArea.toFixed(1)} m²</strong></div>
+                                <div>🗑️ Volume: <strong>${session.totalVolume.toFixed(1)} L</strong></div>
+                                <div>⏱️ Durée: <strong>${sessionDuration.toFixed(0)} min</strong></div>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                                <strong>Zones à nettoyer:</strong><br>
+                                ${session.zones.map((zone, i) => `Zone ${zones.indexOf(zone) + 1} (${zone.dirtLevel}L/m²)`).join(', ')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="border: 1px solid #f39c12; border-radius: 10px; margin-bottom: 15px; background: #fef9e7;">
+                        <div style="background: #f39c12; color: white; padding: 8px 12px;">
+                            <strong>🔋 Recharge ${session.number}</strong>
+                            <span style="float: right;">${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')} - ${String(chargeEndHour).padStart(2, '0')}:${String(chargeEndMinute).padStart(2, '0')}</span>
+                        </div>
+                        <div style="padding: 10px; font-size: 13px; color: #d68910;">
+                            Temps de recharge: <strong>${chargeDuration.toFixed(0)} minutes</strong>
+                        </div>
+                    </div>
+                `;
+                
+                currentTime = chargeEndTime + 5; // 5 min de marge entre sessions
+            });
+            
+            const totalDayTime = currentTime - 8 * 60;
+            const dayEndHour = Math.floor((8 * 60 + totalDayTime) / 60);
+            const dayEndMinute = (8 * 60 + totalDayTime) % 60;
+            
+            scheduleHTML += `
+                    <div style="background: #27ae60; color: white; padding: 15px; border-radius: 10px; text-align: center; margin-top: 20px;">
+                        <h4 style="margin: 0 0 5px 0;">✅ Planning Terminé</h4>
+                        <p style="margin: 0; font-size: 14px;">Durée totale: ${(totalDayTime / 60).toFixed(1)}h | Fin prévue: ${String(dayEndHour).padStart(2, '0')}:${String(dayEndMinute).padStart(2, '0')}</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                        <button onclick="this.parentElement.parentElement.remove()" 
+                                style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); 
+                                       color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            ✓ Fermer
+                        </button>
+                        <button onclick="exportSchedule()" 
+                                style="width: 100%; padding: 12px; background: linear-gradient(135deg, #27ae60, #2ecc71); 
+                                       color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            💾 Exporter Planning
+                        </button>
+                    </div>
+                </div>
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                           background: rgba(0,0,0,0.5); z-index: 9999;" onclick="this.nextElementSibling.remove(); this.remove();"></div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', scheduleHTML);
+        }
+
+        function exportSchedule() {
+            const scheduleData = {
+                dailySchedule: dailySchedule,
+                robotConfig: ROBOT_CONFIG,
+                totalSessions: dailySchedule.length,
+                estimatedDayDuration: dailySchedule.reduce((total, session) => 
+                    total + session.estimatedTime + (session.estimatedTime * ROBOT_CONFIG.chargeRatio), 0),
+                timestamp: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(scheduleData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `planning_nettoyage_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function updateAdvancedStats() {
+            updateStats();
+        }
+
+        function clearAll() {
+            if (confirm('Êtes-vous sûr de vouloir effacer tous les éléments ?')) {
+                zones = [];
+                obstacles = [];
+                walls = [];
+                chargingStation = null;
+                optimizedPath = [];
+                currentPath = [];
+                dailySchedule = [];
+                simulationActive = false;
+                simulationStep = 0;
+                
+                updateZoneList();
+                updateChargingStationInfo();
+                updateStats();
+                redraw();
+            }
+        }
+
+        function exportAdvancedData() {
+            const data = {
+                zones: zones,
+                obstacles: obstacles,
+                walls: walls,
+                chargingStation: chargingStation,
+                optimizedPath: optimizedPath,
+                dailySchedule: dailySchedule,
+                robotConfig: ROBOT_CONFIG,
+                scale: scale,
+                viewSettings: {
+                    zoomLevel: zoomLevel,
+                    viewOffset: viewOffset
+                },
+                timestamp: new Date().toISOString(),
+                stats: {
+                    totalArea: parseFloat(document.getElementById('totalArea').textContent) || 0,
+                    totalDirt: parseFloat(document.getElementById('totalDirt').textContent) || 0,
+                    totalDistance: parseFloat(document.getElementById('totalDistance').textContent) || 0,
+                    cleaningTime: parseFloat(document.getElementById('cleaningTime').textContent) || 0,
+                    movementTime: parseFloat(document.getElementById('movementTime').textContent) || 0,
+                    totalTime: parseFloat(document.getElementById('totalTime').textContent) || 0,
+                    chargeTime: parseFloat(document.getElementById('chargeTime').textContent) || 0,
+                    sessionsCount: parseInt(document.getElementById('sessionsCount').textContent) || 0
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `robot_vacuum_plan_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function removeZone(index, type) {
+            if (type === 'zone') {
+                zones.splice(index, 1);
+            } else if (type === 'obstacle') {
+                obstacles.splice(index, 1);
+            } else if (type === 'wall') {
+                walls.splice(index, 1);
+            }
+            
+            updateZoneList();
+            updateStats();
+            redraw();
+        }
+
+        function removeChargingStation() {
+            chargingStation = null;
+            updateChargingStationInfo();
+            redraw();
+        }
+
+        function simulateRobot() {
+            if (optimizedPath.length === 0) {
+                alert('Veuillez d\'abord générer une trajectoire optimisée.');
+                return;
+            }
+            
+            if (simulationActive) {
+                simulationActive = false;
+                simulationStep = 0;
+                redraw();
+                return;
+            }
+            
+            simulationActive = true;
+            simulationStep = 0;
+            const simulationSpeed = 200; // ms entre chaque étape
+            
+            function animateStep() {
+                if (!simulationActive || simulationStep >= optimizedPath.length) {
+                    simulationActive = false;
+                    alert('Simulation terminée !');
+                    return;
+                }
+                
+                redraw();
+                simulationStep++;
+                
+                setTimeout(animateStep, simulationSpeed);
+            }
+            
+            animateStep();
+        }
+
+        function clearAll() {
+            if (confirm('Êtes-vous sûr de vouloir effacer tous les éléments ?')) {
+                zones = [];
+                obstacles = [];
+                walls = [];
+                chargingStation = null;
+                optimizedPath = [];
+                currentPath = [];
+                simulationActive = false;
+                simulationStep = 0;
+                
+                updateZoneList();
+                updateChargingStationInfo();
+                updateStats();
+                redraw();
+            }
+        }
+
+        function exportAdvancedData() {
+            const data = {
+                zones: zones,
+                obstacles: obstacles,
+                walls: walls,
+                chargingStation: chargingStation,
+                optimizedPath: optimizedPath,
+                robotConfig: ROBOT_CONFIG,
+                scale: scale,
+                timestamp: new Date().toISOString(),
+                stats: {
+                    totalArea: parseFloat(document.getElementById('totalArea').textContent),
+                    totalDistance: parseFloat(document.getElementById('totalDistance').textContent),
+                    cleaningTime: parseFloat(document.getElementById('cleaningTime').textContent),
+                    rotationCount: parseInt(document.getElementById('rotationCount').textContent),
+                    totalTime: parseFloat(document.getElementById('totalTime').textContent),
+                    batteryTime: parseFloat(document.getElementById('batteryTime').textContent)
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `robot_vacuum_plan_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function showPathLegend() {
+            const legendHTML = `
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                           background: white; padding: 30px; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                           z-index: 10000; max-width: 400px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <h3 style="margin: 0 0 20px 0; color: #2c3e50; text-align: center;">🗺️ Légende de la Trajectoire</h3>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <div style="width: 20px; height: 4px; background: #27ae60; margin-right: 10px;"></div>
+                            <span style="color: #2c3e50;">Nettoyage actif</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <div style="width: 20px; height: 2px; background: #3498db; margin-right: 10px; border: 1px dashed #3498db;"></div>
+                            <span style="color: #2c3e50;">Déplacement</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <div style="width: 20px; height: 3px; background: #e74c3c; margin-right: 10px; border: 1px dashed #e74c3c;"></div>
+                            <span style="color: #2c3e50;">Retour à la charge</span>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px; border-top: 1px solid #ecf0f1; padding-top: 15px;">
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <div style="width: 12px; height: 12px; background: #2ecc71; border-radius: 50%; margin-right: 10px;"></div>
+                            <span style="color: #2c3e50;">Point de départ</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <div style="width: 8px; height: 8px; background: #f39c12; border-radius: 50%; margin-right: 14px;"></div>
+                            <span style="color: #2c3e50;">Point de passage</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                            <div style="width: 10px; height: 10px; background: #e74c3c; border-radius: 50%; margin-right: 12px;"></div>
+                            <span style="color: #2c3e50;">Point de fin</span>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 14px;">💡 Fonctionnalités intelligentes:</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #7f8c8d; font-size: 13px;">
+                            <li>Évitement automatique des murs</li>
+                            <li>Optimisation par priorité de zone</li>
+                            <li>Calcul de trajectoire minimale</li>
+                            <li>Points de passage intelligents</li>
+                        </ul>
+                    </div>
+                    
+                    <button onclick="this.parentElement.remove()" 
+                            style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); 
+                                   color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        ✓ Compris
+                    </button>
+                </div>
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                           background: rgba(0,0,0,0.5); z-index: 9999;" onclick="this.nextElementSibling.remove(); this.remove();"></div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', legendHTML);
+        }
+
+        function togglePlanGenerator() {
+            const helpHTML = `
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                           background: white; padding: 30px; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                           z-index: 10000; max-width: 500px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <h3 style="margin: 0 0 20px 0; color: #2c3e50; text-align: center;">📐 Guide d'utilisation</h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #667eea; margin-bottom: 10px;">🎨 Outils de dessin:</h4>
+                        <ul style="color: #7f8c8d; font-size: 14px; line-height: 1.6;">
+                            <li><strong>Rectangle:</strong> Cliquez et glissez pour créer des zones rectangulaires</li>
+                            <li><strong>Cercle:</strong> Cliquez et glissez pour créer des zones circulaires</li>
+                            <li><strong>Ligne droite:</strong> Pour créer des murs fins et précis</li>
+                            <li><strong>Dessin libre:</strong> Tracez à main levée des formes complexes</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #667eea; margin-bottom: 10px;">📁 Import de fichiers:</h4>
+                        <ul style="color: #7f8c8d; font-size: 14px; line-height: 1.6;">
+                            <li><strong>.JSON:</strong> Sauvegarde complète du projet</li>
+                            <li><strong>.SVG:</strong> Plans vectoriels (Illustrator, Inkscape)</li>
+                            <li><strong>.DXF:</strong> Plans CAO (AutoCAD, etc.)</li>
+                            <li><strong>.STEP:</strong> Modèles 3D CAO</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 14px;">⚡ Conseils d'optimisation:</h4>
+                        <ul style="margin: 0; padding-left: 20px; color: #7f8c8d; font-size: 13px; line-height: 1.5;">
+                            <li>Utilisez des formes géométriques simples</li>
+                            <li>Définissez clairement les murs et obstacles</li>
+                            <li>Placez la station de charge dans un coin accessible</li>
+                            <li>Ajustez l'échelle selon vos dimensions réelles</li>
+                        </ul>
+                    </div>
+                    
+                    <button onclick="this.parentElement.remove()" 
+                            style="width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea, #764ba2); 
+                                   color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        ✓ Compris
+                    </button>
+                </div>
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                           background: rgba(0,0,0,0.5); z-index: 9999;" onclick="this.nextElementSibling.remove(); this.remove();"></div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', helpHTML);
+        }
+
+        function handleAdvancedFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const fileName = file.name.toLowerCase();
+            const reader = new FileReader();
+            
+            // Afficher un indicateur de chargement
+            const loadingMsg = document.createElement('div');
+            loadingMsg.style.cssText = `
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.8); color: white; padding: 20px;
+                border-radius: 10px; z-index: 10000; font-size: 16px;
+            `;
+            loadingMsg.textContent = 'Importation en cours...';
+            document.body.appendChild(loadingMsg);
+            
+            if (fileName.endsWith('.json')) {
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        importJSONData(data);
+                        document.body.removeChild(loadingMsg);
+                        alert('Import JSON réussi !');
+                    } catch (error) {
+                        document.body.removeChild(loadingMsg);
+                        alert('Erreur lors de l\'import JSON: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+                
+            } else if (fileName.endsWith('.svg')) {
+                reader.onload = function(e) {
+                    try {
+                        parseAdvancedSVG(e.target.result);
+                        document.body.removeChild(loadingMsg);
+                    } catch (error) {
+                        document.body.removeChild(loadingMsg);
+                        alert('Erreur lors de l\'import SVG: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+                
+            } else if (fileName.endsWith('.dxf')) {
+                reader.onload = function(e) {
+                    try {
+                        parseAdvancedDXF(e.target.result);
+                        document.body.removeChild(loadingMsg);
+                    } catch (error) {
+                        document.body.removeChild(loadingMsg);
+                        alert('Erreur lors de l\'import DXF: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+                
+            } else if (fileName.endsWith('.step') || fileName.endsWith('.stp')) {
+                reader.onload = function(e) {
+                    try {
+                        parseSTEP(e.target.result);
+                        document.body.removeChild(loadingMsg);
+                    } catch (error) {
+                        document.body.removeChild(loadingMsg);
+                        alert('Erreur lors de l\'import STEP: ' + error.message + '\n\nConseil: Vérifiez que le fichier STEP contient des entités géométriques simples (lignes, points, cercles).');
+                    }
+                };
+                reader.readAsText(file);
+                
+            } else {
+                document.body.removeChild(loadingMsg);
+                alert('Format non supporté. Formats acceptés:\n• .json (sauvegarde)\n• .svg (vectoriel)\n• .dxf (CAO)\n• .step/.stp (CAO 3D)');
+            }
+        }
+
+        function importJSONData(data) {
+            try {
+                if (data.zones) zones = data.zones;
+                if (data.obstacles) obstacles = data.obstacles;
+                if (data.walls) walls = data.walls;
+                if (data.chargingStation) chargingStation = data.chargingStation;
+                if (data.optimizedPath) optimizedPath = data.optimizedPath;
+                if (data.dailySchedule) dailySchedule = data.dailySchedule;
+                if (data.robotConfig) ROBOT_CONFIG = { ...ROBOT_CONFIG, ...data.robotConfig };
+                if (data.scale) {
+                    scale = data.scale;
+                    document.getElementById('scale').value = scale;
+                }
+                if (data.viewSettings) {
+                    zoomLevel = data.viewSettings.zoomLevel || 1;
+                    viewOffset = data.viewSettings.viewOffset || {x: 0, y: 0};
+                }
+                
+                updateZoneList();
+                updateChargingStationInfo();
+                updateStats();
+                redraw();
+            } catch (error) {
+                throw new Error('Erreur lors de l\'import des données: ' + error.message);
+            }
+        }
+
+        function updateChargingStationInfo() {
+            const info = document.getElementById('chargingStationInfo');
+            if (chargingStation) {
+                const x = (chargingStation.x / scale).toFixed(1);
+                const y = ((canvas.height - chargingStation.y) / scale).toFixed(1);
+                info.innerHTML = `
+                    <p style="color: #27ae60; font-weight: bold;">✅ Station placée</p>
+                    <p style="font-size: 0.8em; color: #7f8c8d;">Position: (${x}m, ${y}m)</p>
+                    <button onclick="removeChargingStation()" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px;">Supprimer</button>
+                `;
+            } else {
+                info.innerHTML = `
+                    <p style="color: #7f8c8d; font-size: 0.9em;">Sélectionnez "Station de recharge" puis cliquez sur le canvas pour la placer</p>
+                `;
+            }
+        }
+
+        function toggleMeasureMode() {
+            measureMode = !measureMode;
+            const btn = document.getElementById('measureBtn');
+            if (measureMode) {
+                btn.textContent = '📏 Désactiver Mesure';
+                btn.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+                canvas.style.cursor = 'crosshair';
+            } else {
+                btn.textContent = '📏 Activer Mesure';
+                btn.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
+                canvas.style.cursor = 'crosshair';
+                measureStart = null;
+                measureEnd = null;
+                document.getElementById('measureResult').textContent = '';
+                document.getElementById('measureDisplay').style.display = 'none';
+            }
+        }
+
+        function updateMeasureDisplay() {
+            if (!measureStart || !measureEnd) return;
+            
+            const display = document.getElementById('measureDisplay');
+            const distance = getDistance(measureStart, measureEnd) / scale;
+            display.textContent = `${distance.toFixed(2)} m`;
+            display.style.display = 'block';
+            
+            // Convertir les coordonnées world vers screen pour l'affichage
+            const screenPos = worldToScreen(measureEnd);
+            display.style.left = screenPos.x + 'px';
+            display.style.top = screenPos.y + 'px';
+        }
+
+        // Fonctions utilitaires
+        function getDistance(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+        function getZoneBounds(points) {
+            let minX = Infinity, minY = Infinity;
+            let maxX = -Infinity, maxY = -Infinity;
+            
+            points.forEach(point => {
+                minX = Math.min(minX, point.x);
+                maxX = Math.max(maxX, point.x);
+                minY = Math.min(minY, point.y);
+                maxY = Math.max(maxY, point.y);
+            });
+            
+            return { minX, minY, maxX, maxY };
+        }
+
+        function calculatePolygonArea(points) {
+            if (points.length < 3) return 0;
+            
+            let area = 0;
+            for (let i = 0; i < points.length; i++) {
+                const j = (i + 1) % points.length;
+                area += points[i].x * points[j].y;
+                area -= points[j].x * points[i].y;
+            }
+            return Math.abs(area) / 2;
+        }
+
+        function getPolygonCenter(points) {
+            let cx = 0, cy = 0;
+            points.forEach(point => {
+                cx += point.x;
+                cy += point.y;
+            });
+            return {
+                x: cx / points.length,
+                y: cy / points.length
+            };
+        }
+
+        function drawPolygon(points, fill) {
+            if (points.length === 0) return;
+            
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            
+            ctx.closePath();
+            
+            if (fill) {
+                ctx.fill();
+            }
+            ctx.stroke();
+        }
+
+        function parseAdvancedSVG(svgContent) {
+            const parser = new DOMParser();
+            const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
+            const paths = svgDoc.querySelectorAll('path, rect, polygon, polyline');
+            
+            paths.forEach((path, index) => {
+                const points = [];
+                
+                if (path.tagName === 'rect') {
+                    const x = parseFloat(path.getAttribute('x') || 0) * scale / 10;
+                    const y = parseFloat(path.getAttribute('y') || 0) * scale / 10;
+                    const width = parseFloat(path.getAttribute('width') || 0) * scale / 10;
+                    const height = parseFloat(path.getAttribute('height') || 0) * scale / 10;
+                    
+                    points.push(
+                        { x: x, y: y },
+                        { x: x + width, y: y },
+                        { x: x + width, y: y + height },
+                        { x: x, y: y + height }
+                    );
+                } else if (path.tagName === 'polygon' || path.tagName === 'polyline') {
+                    const pointsAttr = path.getAttribute('points');
+                    if (pointsAttr) {
+                        const coords = pointsAttr.match(/[\d.-]+/g);
+                        for (let i = 0; i < coords.length; i += 2) {
+                            if (coords[i + 1]) {
+                                points.push({
+                                    x: parseFloat(coords[i]) * scale / 10,
+                                    y: parseFloat(coords[i + 1]) * scale / 10
+                                });
+                            }
+                        }
+                    }
+                }
+                
+                if (points.length >= 3) {
+                    walls.push({
+                        points: points,
+                        id: Date.now() + index,
+                        type: 'SVG_IMPORT'
+                    });
+                }
+            });
+            
+            updateZoneList();
+            redraw();
+            alert(`Import SVG réussi : ${paths.length} éléments traités`);
+        }
+
+        function parseAdvancedDXF(dxfContent) {
+            const lines = dxfContent.split('\n');
+            const elements = [];
+            let currentElement = null;
+            let isInEntitiesSection = false;
+            
+            // Détecter l'échelle automatiquement
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            let coordCount = 0;
+            
+            // Premier passage pour déterminer les dimensions
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line === '10' || line === '20') {
+                    const value = parseFloat(lines[i + 1]);
+                    if (!isNaN(value)) {
+                        if (line === '10') {
+                            minX = Math.min(minX, value);
+                            maxX = Math.max(maxX, value);
+                        } else {
+                            minY = Math.min(minY, value);
+                            maxY = Math.max(maxY, value);
+                        }
+                        coordCount++;
+                    }
+                }
+            }
+            
+            // Calculer une échelle appropriée
+            if (coordCount > 0) {
+                const dxfWidth = maxX - minX;
+                const dxfHeight = maxY - minY;
+                const canvasWidth = canvas.width * 0.8; // 80% du canvas
+                const canvasHeight = canvas.height * 0.8;
+                
+                if (dxfWidth > 0 && dxfHeight > 0) {
+                    const scaleX = canvasWidth / dxfWidth;
+                    const scaleY = canvasHeight / dxfHeight;
+                    const autoScale = Math.min(scaleX, scaleY);
+                    
+                    if (autoScale < 1 || autoScale > 100) {
+                        scale = Math.max(1, Math.min(100, autoScale));
+                        document.getElementById('scale').value = scale;
+                    }
+                }
+            }
+            
+            // Deuxième passage pour extraire les entités
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                if (line === 'ENTITIES') {
+                    isInEntitiesSection = true;
+                    continue;
+                }
+                
+                if (!isInEntitiesSection) continue;
+                
+                if (['LINE', 'POLYLINE', 'LWPOLYLINE', 'CIRCLE', 'ARC'].includes(line)) {
+                    if (currentElement) elements.push(currentElement);
+                    currentElement = { 
+                        type: line, 
+                        points: [], 
+                        properties: {},
+                        coords: {}
+                    };
+                    continue;
+                }
+                
+                if (currentElement) {
+                    if (line === '10') currentElement.coords.x1 = (parseFloat(lines[i + 1]) - minX) * scale;
+                    if (line === '20') currentElement.coords.y1 = canvas.height - ((parseFloat(lines[i + 1]) - minY) * scale);
+                    if (line === '11') currentElement.coords.x2 = (parseFloat(lines[i + 1]) - minX) * scale;
+                    if (line === '21') currentElement.coords.y2 = canvas.height - ((parseFloat(lines[i + 1]) - minY) * scale);
+                    if (line === '40') currentElement.properties.radius = parseFloat(lines[i + 1]) * scale;
+                    
+                    // Créer les points selon le type
+                    if (currentElement.type === 'LINE' && 
+                        currentElement.coords.x1 !== undefined && 
+                        currentElement.coords.y1 !== undefined &&
+                        currentElement.coords.x2 !== undefined && 
+                        currentElement.coords.y2 !== undefined) {
+                        
+                        currentElement.points = [
+                            {x: currentElement.coords.x1, y: currentElement.coords.y1},
+                            {x: currentElement.coords.x2, y: currentElement.coords.y2}
+                        ];
+                    }
+                    
+                    if (currentElement.type === 'CIRCLE' && 
+                        currentElement.coords.x1 !== undefined && 
+                        currentElement.coords.y1 !== undefined &&
+                        currentElement.properties.radius !== undefined) {
+                        
+                        const centerX = currentElement.coords.x1;
+                        const centerY = currentElement.coords.y1;
+                        const radius = currentElement.properties.radius;
+                        
+                        currentElement.points = [];
+                        for (let angle = 0; angle < 2 * Math.PI; angle += Math.PI / 16) {
+                            currentElement.points.push({
+                                x: centerX + Math.cos(angle) * radius,
+                                y: centerY + Math.sin(angle) * radius
+                            });
+                        }
+                    }
+                }
+            }
+            
+            if (currentElement) elements.push(currentElement);
+            
+            // Conversion en éléments
+            elements.forEach((element, index) => {
+                if (element.points.length >= 2) {
+                    walls.push({
+                        points: element.points,
+                        id: Date.now() + index,
+                        type: element.type,
+                        source: 'DXF'
+                    });
+                }
+            });
+            
+            updateZoneList();
+            redraw();
+            alert(`Import DXF réussi !\n• ${elements.length} éléments importés\n• Échelle ajustée: ${scale.toFixed(1)} px/m\n• Dimensions: ${(maxX-minX).toFixed(1)} x ${(maxY-minY).toFixed(1)} m`);
+        }
+
+        // Parser STEP complet
+        function parseSTEP(stepContent) {
+            try {
+                const lines = stepContent.split('\n');
+                const entities = [];
+                let dataSection = false;
+                
+                lines.forEach((line, index) => {
+                    line = line.trim();
+                    
+                    if (line === 'DATA;') {
+                        dataSection = true;
+                        return;
+                    }
+                    
+                    if (line === 'ENDSEC;') {
+                        dataSection = false;
+                        return;
+                    }
+                    
+                    if (!dataSection || !line.startsWith('#')) return;
+                    
+                    if (line.includes('CARTESIAN_POINT') || line.includes('VERTEX_POINT')) {
+                        const coords = extractCoordinatesFromSTEP(line);
+                        if (coords) {
+                            entities.push({
+                                type: 'POINT',
+                                coordinates: coords,
+                                id: extractEntityId(line)
+                            });
+                        }
+                    }
+                    
+                    if (line.includes('LINE') && !line.includes('POLYLINE')) {
+                        const entityId = extractEntityId(line);
+                        const pointRefs = extractPointReferences(line);
+                        entities.push({
+                            type: 'LINE',
+                            pointRefs: pointRefs,
+                            id: entityId
+                        });
+                    }
+                    
+                    if (line.includes('POLYLINE') || line.includes('B_SPLINE_CURVE')) {
+                        const entityId = extractEntityId(line);
+                        const pointRefs = extractPointReferences(line);
+                        entities.push({
+                            type: 'POLYLINE',
+                            pointRefs: pointRefs,
+                            id: entityId
+                        });
+                    }
+                    
+                    if (line.includes('CIRCLE') || line.includes('CONIC_CURVE')) {
+                        const entityId = extractEntityId(line);
+                        const center = extractCoordinatesFromSTEP(line);
+                        const radius = extractRadiusFromSTEP(line);
+                        entities.push({
+                            type: 'CIRCLE',
+                            center: center,
+                            radius: radius,
+                            id: entityId
+                        });
+                    }
+                });
+                
+                const geometries = buildGeometriesFromSTEP(entities);
+                
+                geometries.forEach((geom, index) => {
+                    if (geom.points && geom.points.length >= 2) {
+                        walls.push({
+                            points: geom.points,
+                            id: Date.now() + index,
+                            type: geom.type,
+                            source: 'STEP'
+                        });
+                    }
+                });
+                
+                updateZoneList();
+                redraw();
+                alert(`Import STEP réussi : ${geometries.length} éléments importés`);
+            } catch (error) {
+                throw new Error('Erreur lors du parsing STEP: ' + error.message);
+            }
+        }
+
+        function extractEntityId(line) {
+            const match = line.match(/^#(\d+)/);
+            return match ? parseInt(match[1]) : null;
+        }
+
+        function extractCoordinatesFromSTEP(line) {
+            const coordPattern = /\(([^)]+)\)/g;
+            const matches = [...line.matchAll(coordPattern)];
+            
+            for (let match of matches) {
+                const coords = match[1].split(',').map(s => {
+                    const num = parseFloat(s.trim());
+                    return isNaN(num) ? null : num;
+                }).filter(n => n !== null);
+                
+                if (coords.length >= 2) {
+                    return {
+                        x: coords[0] * scale,
+                        y: canvas.height - (coords[1] * scale),
+                        z: coords.length > 2 ? coords[2] * scale : 0
+                    };
+                }
+            }
+            
+            return null;
+        }
+
+        function extractPointReferences(line) {
+            const refPattern = /#(\d+)/g;
+            const refs = [];
+            let match;
+            
+            while ((match = refPattern.exec(line)) !== null) {
+                refs.push(parseInt(match[1]));
+            }
+            
+            return refs;
+        }
+
+        function extractRadiusFromSTEP(line) {
+            const numbers = line.match(/[\d.]+/g);
+            if (numbers && numbers.length > 0) {
+                return parseFloat(numbers[numbers.length - 1]) * scale;
+            }
+            return 10 * scale;
+        }
+
+        function buildGeometriesFromSTEP(entities) {
+            const points = {};
+            const geometries = [];
+            
+            entities.forEach(entity => {
+                if (entity.type === 'POINT' && entity.coordinates) {
+                    points[entity.id] = entity.coordinates;
+                }
+            });
+            
+            entities.forEach(entity => {
+                if (entity.type === 'LINE' && entity.pointRefs && entity.pointRefs.length >= 2) {
+                    const linePoints = entity.pointRefs
+                        .map(ref => points[ref])
+                        .filter(p => p !== undefined);
+                    
+                    if (linePoints.length >= 2) {
+                        geometries.push({
+                            type: 'LINE',
+                            points: linePoints
+                        });
+                    }
+                }
+                
+                if (entity.type === 'POLYLINE' && entity.pointRefs && entity.pointRefs.length >= 2) {
+                    const polylinePoints = entity.pointRefs
+                        .map(ref => points[ref])
+                        .filter(p => p !== undefined);
+                    
+                    if (polylinePoints.length >= 2) {
+                        geometries.push({
+                            type: 'POLYLINE',
+                            points: polylinePoints
+                        });
+                    }
+                }
+                
+                if (entity.type === 'CIRCLE' && entity.center && entity.radius) {
+                    const circlePoints = [];
+                    const segments = 32;
+                    
+                    for (let i = 0; i < segments; i++) {
+                        const angle = (i / segments) * 2 * Math.PI;
+                        circlePoints.push({
+                            x: entity.center.x + Math.cos(angle) * entity.radius,
+                            y: entity.center.y + Math.sin(angle) * entity.radius
+                        });
+                    }
+                    
+                    geometries.push({
+                        type: 'CIRCLE',
+                        points: circlePoints
+                    });
+                }
+            });
+            
+            return geometries;
+        }
+    </script>
+</body>
+</html>
