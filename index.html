@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optimisateur Robot Aspirateur Avancé avec Pathfinding</title>
+    <title>Optimisateur Robot Aspirateur Pathfinding</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; margin: 0; padding: 0;}
         .container {max-width: 1300px; margin: 30px auto; background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); padding: 30px;}
@@ -99,7 +99,6 @@
     </div>
 </div>
 <script>
-// --- Données principales ---
 let canvas = document.getElementById('canvas');
 let ctx = canvas.getContext('2d');
 let zones = [], obstacles = [], walls = [];
@@ -112,7 +111,6 @@ let optimizedPath = [], simulationActive = false, simulationStep = 0;
 
 const PRIORITY_COLORS = {1:'#e74c3c',2:'#f39c12',3:'#f1c40f',4:'#2ecc71',5:'#3498db'};
 
-// --- UI Events ---
 document.getElementById('scale').onchange = function() {
     scale = parseInt(this.value); redraw();
 };
@@ -122,11 +120,11 @@ document.getElementById('robotDiameter').onchange = function() {
 document.getElementById('shapeType').onchange = function() {
     shapeMode = this.value;
 };
+
 canvas.addEventListener('mousedown', handleMouseDown);
 canvas.addEventListener('mousemove', handleMouseMove);
 canvas.addEventListener('mouseup', handleMouseUp);
 
-// --- Utilitaires géométrie ---
 function getMousePosition(e) {
     let rect = canvas.getBoundingClientRect();
     return {x: (e.clientX-rect.left), y:(e.clientY-rect.top)};
@@ -155,7 +153,6 @@ function getPolygonArea(points){
     return Math.abs(a/2)/(scale*scale);
 }
 
-// --- Dessin ---
 function redraw() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawGrid();
@@ -261,7 +258,6 @@ function drawCurrentZone() {
     ctx.stroke(); ctx.setLineDash([]); ctx.restore();
 }
 
-// --- Interaction canvas ---
 function handleMouseDown(e) {
     let world = screenToWorld(getMousePosition(e));
     let elementType = document.getElementById('elementType').value;
@@ -392,8 +388,8 @@ function generateCoveragePathForRectangle(rectPoints, robotDiameter) {
 }
 
 // --- Grille/Pathfinding ---
-// On crée une grille 2D avec obstacles/murs marqués comme bloquants
-function makeGrid(cellSize=20){
+// Grille fine, obstacles/murs élargis selon rayon robot
+function makeGrid(cellSize=10){
     let width = canvas.width, height = canvas.height;
     let cols = Math.ceil(width / cellSize), rows = Math.ceil(height / cellSize);
     let grid = [];
@@ -402,16 +398,18 @@ function makeGrid(cellSize=20){
         for(let x=0; x<cols; x++) row.push(0);
         grid.push(row);
     }
-    // Marque obstacles/murs (simple: pixels inside polygon)
     let markPolygon = (poly) => {
-        // bounding box
         let minX=Math.min(...poly.map(p=>p.x)), maxX=Math.max(...poly.map(p=>p.x));
         let minY=Math.min(...poly.map(p=>p.y)), maxY=Math.max(...poly.map(p=>p.y));
-        for(let y=Math.floor(minY/cellSize); y<=Math.ceil(maxY/cellSize); y++){
-            for(let x=Math.floor(minX/cellSize); x<=Math.ceil(maxX/cellSize); x++){
+        let radius = Math.ceil((ROBOT_CONFIG.diameter * scale)/2/cellSize);
+        for(let y=Math.floor(minY/cellSize)-radius; y<=Math.ceil(maxY/cellSize)+radius; y++){
+            for(let x=Math.floor(minX/cellSize)-radius; x<=Math.ceil(maxX/cellSize)+radius; x++){
                 let cx=x*cellSize+cellSize/2, cy=y*cellSize+cellSize/2;
                 if(pointInPolygon({x:cx, y:cy}, poly)){
-                    if(grid[y]&&grid[y][x]!==undefined) grid[y][x]=1;
+                    for(let dy=-radius; dy<=radius; dy++)
+                        for(let dx=-radius; dx<=radius; dx++)
+                            if(grid[y+dy] && grid[y+dy][x+dx]!==undefined)
+                                grid[y+dy][x+dx]=1;
                 }
             }
         }
@@ -446,7 +444,6 @@ function astar(start, end, gridObj) {
         open.sort((a,b)=>a.f-b.f);
         let cur = open.shift();
         if(cur.x===endCell.x && cur.y===endCell.y){
-            // Reconstruit le chemin
             let path = [];
             while(cur){
                 path.push({x:cur.x*cellSize+cellSize/2, y:cur.y*cellSize+cellSize/2});
@@ -479,11 +476,10 @@ function generateOptimizedPath() {
     let path = [];
     let current = { x: chargingStation.x, y: chargingStation.y };
     let robotDiameter = ROBOT_CONFIG.diameter;
-    let gridObj = makeGrid(20); // Grille de 20px
+    let gridObj = makeGrid(10); // Grille fine
     zones.forEach(zone => {
         if (zone.points.length === 4) {
             let coverage = generateCoveragePathForRectangle(zone.points, robotDiameter);
-            // Pathfinding vers début de couverture
             let seg = astar(current, coverage[0], gridObj);
             for(let p of seg) path.push(p);
             for (let i=0;i<coverage.length-1;i++) path.push(coverage[i+1]);
@@ -495,7 +491,6 @@ function generateOptimizedPath() {
             current = center;
         }
     });
-    // Retour station
     let ret = astar(current, { x: chargingStation.x, y: chargingStation.y }, gridObj);
     for(let p of ret) path.push(p);
     optimizedPath = path;
@@ -516,13 +511,12 @@ function simulateRobot(){
         if(!simulationActive) return;
         redraw();
         simulationStep++;
-        if(simulationStep<optimizedPath.length) setTimeout(step,30); // animation rapide
+        if(simulationStep<optimizedPath.length) setTimeout(step,30);
         else simulationActive=false;
     }
     step();
 }
 
-// --- Init ---
 redraw();
 updateZoneList();
 updateStats();
