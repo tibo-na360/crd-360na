@@ -8,15 +8,11 @@
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            min-height: 100vh; margin: 0; padding: 0;
         }
         .container {
-            max-width: 1300px;
-            margin: 30px auto;
-            background: #fff;
-            border-radius: 20px;
+            max-width: 1300px; margin: 30px auto;
+            background: #fff; border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.1);
             padding: 30px;
         }
@@ -29,92 +25,49 @@
             margin-bottom: 20px;
         }
         .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-            margin-bottom: 20px;
+            display: flex; flex-wrap: wrap; gap: 25px; margin-bottom: 20px;
         }
         .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 7px;
-            min-width: 200px;
+            display: flex; flex-direction: column; gap: 7px; min-width: 200px;
         }
         label { font-weight: 600; color: #2c3e50; }
         input, select, button {
-            padding: 10px;
-            border: 2px solid #e3e8ef;
-            border-radius: 10px;
-            font-size: 1rem;
-            background: white;
-            transition: border 0.2s;
+            padding: 10px; border: 2px solid #e3e8ef; border-radius: 10px;
+            font-size: 1rem; background: white; transition: border 0.2s;
         }
         input:focus, select:focus { border-color: #667eea; }
         button {
             background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
+            color: white; border: none; cursor: pointer; font-weight: 600;
         }
         button:hover { background: linear-gradient(135deg, #764ba2, #667eea); }
         .workspace {
-            display: flex;
-            gap: 25px;
-            min-height: 600px;
+            display: flex; gap: 25px; min-height: 600px;
         }
         .canvas-container {
-            flex: 2;
-            background: #fff;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            position: relative;
-            min-width: 600px;
+            flex: 2; background: #fff; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-width: 600px;
         }
         canvas {
-            display: block;
-            background: #fafbfc;
-            border-radius: 15px;
-            border: 1px solid #e3e8ef;
-            width: 100%;
-            height: 600px;
+            display: block; background: #fafbfc; border-radius: 15px;
+            border: 1px solid #e3e8ef; width: 100%; height: 600px;
         }
         .sidebar {
-            flex: 1;
-            background: #f5f6fa;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.07);
-            min-width: 300px;
+            flex: 1; background: #f5f6fa; border-radius: 15px; padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.07); min-width: 300px;
         }
-        .zone-list {
-            max-height: 180px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-        }
+        .zone-list { max-height: 180px; overflow-y: auto; margin-bottom: 15px; }
         .zone-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #fff;
-            border-radius: 8px;
-            padding: 6px 12px;
-            margin-bottom: 5px;
-            font-size: 0.95em;
-            border-left: 5px solid #667eea;
+            display: flex; align-items: center; justify-content: space-between;
+            background: #fff; border-radius: 8px; padding: 6px 12px; margin-bottom: 5px;
+            font-size: 0.95em; border-left: 5px solid #667eea;
         }
         .stat-block {
             background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 12px;
-            color: white;
-            padding: 15px;
-            margin-top: 12px;
+            border-radius: 12px; color: white; padding: 15px; margin-top: 12px;
         }
         .stat-block div { margin: 6px 0; }
-        .action-buttons button {
-            margin: 7px 0;
-            width: 100%;
-        }
+        .action-buttons button { margin: 7px 0; width: 100%; }
         @media (max-width: 900px) {
             .workspace { flex-direction: column; }
             .canvas-container, .sidebar { min-width: 0; }
@@ -124,7 +77,6 @@
 <body>
 <div class="container">
     <h1>🤖 Optimisateur Robot Aspirateur Avancé</h1>
-
     <div class="controls">
         <div class="control-group">
             <label>Forme géométrique</label>
@@ -165,20 +117,14 @@
             </select>
         </div>
         <div class="control-group">
-            <label>Robot (cm / m/min / L / min)</label>
-            <div style="display:flex;gap:5px;">
-                <input type="number" id="robotDiameter" value="35" min="20" max="50" title="diamètre en cm" style="width:55px;">
-                <input type="number" id="robotSpeed" value="15" min="5" max="30" title="vitesse en m/min" style="width:55px;">
-                <input type="number" id="tankCapacity" value="350" min="100" max="1000" title="réservoir en L" style="width:60px;">
-                <input type="number" id="batteryLife" value="90" min="30" max="180" title="autonomie en min" style="width:55px;">
-            </div>
+            <label>Robot diamètre (m)</label>
+            <input type="number" id="robotDiameter" value="1.5" min="0.4" max="3" step="0.01" style="width:90px;">
         </div>
         <div class="control-group">
             <label>Échelle (px/m)</label>
             <input type="number" id="scale" value="50" min="10" max="200" style="width:80px;">
         </div>
     </div>
-
     <div class="workspace">
         <div class="canvas-container">
             <canvas id="canvas" width="900" height="600"></canvas>
@@ -202,14 +148,12 @@
 <script>
 let canvas = document.getElementById('canvas');
 let ctx = canvas.getContext('2d');
-
 let zones = [], obstacles = [], walls = [];
 let chargingStation = null;
 let currentZone = [];
 let isDrawing = false, shapeStart = null, shapeMode = 'freehand';
 let scale = 50, zoomLevel = 1, viewOffset = {x:0,y:0};
-let ROBOT_CONFIG = {diameter:0.35,speed:15,tankCapacity:350,batteryLife:90};
-
+let ROBOT_CONFIG = {diameter:1.5};
 let optimizedPath = [], simulationActive = false, simulationStep = 0;
 
 const PRIORITY_COLORS = {1:'#e74c3c',2:'#f39c12',3:'#f1c40f',4:'#2ecc71',5:'#3498db'};
@@ -218,16 +162,7 @@ document.getElementById('scale').onchange = function() {
     scale = parseInt(this.value); redraw();
 };
 document.getElementById('robotDiameter').onchange = function() {
-    ROBOT_CONFIG.diameter = parseFloat(this.value)/100;
-};
-document.getElementById('robotSpeed').onchange = function() {
-    ROBOT_CONFIG.speed = parseFloat(this.value);
-};
-document.getElementById('tankCapacity').onchange = function() {
-    ROBOT_CONFIG.tankCapacity = parseFloat(this.value);
-};
-document.getElementById('batteryLife').onchange = function() {
-    ROBOT_CONFIG.batteryLife = parseFloat(this.value);
+    ROBOT_CONFIG.diameter = parseFloat(this.value);
 };
 document.getElementById('shapeType').onchange = function() {
     shapeMode = this.value;
@@ -323,11 +258,16 @@ function drawPolygon(points, fill) {
     fill?ctx.fill():ctx.stroke();
 }
 function drawPath(path) {
+    if (path.length < 2) return;
     ctx.save();
-    ctx.strokeStyle="#8e44ad"; ctx.lineWidth=4/zoomLevel; ctx.setLineDash([]);
+    ctx.strokeStyle = "#8e44ad";
+    ctx.lineWidth = 4 / zoomLevel;
+    ctx.setLineDash([]);
     ctx.beginPath();
-    ctx.moveTo(path[0].x,path[0].y);
-    for(let i=1;i<path.length;i++) ctx.lineTo(path[i].x,path[i].y);
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < path.length; i++) {
+        ctx.lineTo(path[i].x, path[i].y);
+    }
     ctx.stroke();
     ctx.restore();
 }
@@ -482,33 +422,65 @@ function clearAll(){
     updateZoneList(); updateStats(); redraw();
 }
 
-// --- OPTIMISATION DE TRAJECTOIRE ---
+// --- Génération du chemin de couverture pour rectangle ---
+function generateCoveragePathForRectangle(rectPoints, robotDiameter) {
+    // rectPoints: 4 points [{x,y},{x,y},{x,y},{x,y}] supposé axis aligned
+    let minX = Math.min(...rectPoints.map(p => p.x));
+    let maxX = Math.max(...rectPoints.map(p => p.x));
+    let minY = Math.min(...rectPoints.map(p => p.y));
+    let maxY = Math.max(...rectPoints.map(p => p.y));
+    let bandSpacing = robotDiameter * scale * 0.98; // 0.98 pour chevauchement léger
+    let path = [];
+    let direction = 1;
+    for (let y = minY + bandSpacing / 2; y < maxY; y += bandSpacing) {
+        let x1 = minX, x2 = maxX;
+        if (direction === 1) {
+            path.push({ x: x1, y: y });
+            path.push({ x: x2, y: y });
+        } else {
+            path.push({ x: x2, y: y });
+            path.push({ x: x1, y: y });
+        }
+        direction *= -1;
+    }
+    return path;
+}
+
+// --- OPTIMISATION DE TRAJECTOIRE AVEC COUVERTURE ---
 function generateOptimizedPath() {
-    if(!chargingStation || zones.length===0){
-        alert("Ajoute une station de charge et au moins une zone !");
+    if (!chargingStation || zones.length === 0) {
+        alert("Ajoute une station de recharge et au moins une zone !");
         return;
     }
-    // TSP simple pondéré par priorité
-    let sortedZones = zones.slice().sort((a,b)=>a.priority-b.priority);
-    let toVisit = sortedZones.map(z=>({...z,center:getPolygonCenter(z.points)}));
-    let path = [], current={x:chargingStation.x, y:chargingStation.y}, totalDistance=0;
-    while(toVisit.length){
-        let minDist=Infinity, idx=0;
-        for(let i=0;i<toVisit.length;i++){
-            let dist=getDistance(current,toVisit[i].center)*(1+0.2*(toVisit[i].priority-1));
-            if(dist<minDist){minDist=dist;idx=i;}
+    let path = [];
+    let current = { x: chargingStation.x, y: chargingStation.y };
+    let robotDiameter = ROBOT_CONFIG.diameter; // en mètres
+    zones.forEach(zone => {
+        // Si rectangle
+        if (zone.points.length === 4) {
+            let coverage = generateCoveragePathForRectangle(zone.points, robotDiameter);
+            // Aller du point courant au début de la zone
+            if (path.length === 0 || getDistance(current, coverage[0]) > 0.01) path.push(coverage[0]);
+            for (let p of coverage) path.push(p);
+            current = coverage[coverage.length - 1];
+        } else {
+            // fallback : va au centre
+            let center = getPolygonCenter(zone.points);
+            path.push(center);
+            current = center;
         }
-        let next=toVisit.splice(idx,1)[0];
-        path.push(next.center);
-        totalDistance += getDistance(current,next.center);
-        current=next.center;
-    }
-    path.push({x:chargingStation.x,y:chargingStation.y});
-    totalDistance+=getDistance(current,chargingStation);
-    optimizedPath=path;
-    document.getElementById("totalDistance").textContent=totalDistance.toFixed(2)+" m";
+    });
+    // Retour station
+    path.push({ x: chargingStation.x, y: chargingStation.y });
+    optimizedPath = path;
+    document.getElementById("totalDistance").textContent = computeTotalPathDistance(path).toFixed(2) + " m";
     redraw();
-    alert("Trajectoire optimisée générée !");
+    alert("Trajectoire de couverture générée !");
+}
+function computeTotalPathDistance(path){
+    let d=0;
+    for(let i=1;i<path.length;i++) d+=getDistance(path[i-1],path[i]);
+    return d;
 }
 
 // --- SIMULATION ---
