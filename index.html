@@ -20,7 +20,7 @@
         canvas {display: block; background: #fafbfc; border-radius: 15px; border: 1px solid #e3e8ef; width: 100%; height: 600px;}
         .sidebar {flex: 1; background: #f5f6fa; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.07); min-width: 300px;}
         .zone-list { max-height: 180px; overflow-y: auto; margin-bottom: 15px;}
-        .zone-item {display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 8px; padding: 6px 12px; margin-bottom: 5px; font-size: 0.95em; border-left: 5px solid #667eea;}
+        .zone-item {display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 8px; padding: 6px 12px; margin-bottom: 5px; font-size: 0.95em; border-left: 5px solid #ccc;}
         .stat-block {background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; color: white; padding: 15px; margin-top: 12px;}
         .stat-block div { margin: 6px 0; }
         .action-buttons button {margin: 7px 0; width: 100%;}
@@ -74,6 +74,10 @@
             <input type="number" id="robotDiameter" value="1.5" min="0.4" max="3" step="0.01" style="width:90px;">
         </div>
         <div class="control-group">
+            <label>Robot capacité (L)</label>
+            <input type="number" id="robotCapacity" value="10" min="1" max="100" step="0.1" style="width:90px;">
+        </div>
+        <div class="control-group">
             <label>Échelle (px/m)</label>
             <input type="number" id="scale" value="50" min="10" max="200" style="width:80px;">
         </div>
@@ -106,8 +110,9 @@ let chargingStation = null;
 let currentZone = [];
 let isDrawing = false, shapeStart = null, shapeMode = 'freehand';
 let scale = 50, zoomLevel = 1, viewOffset = {x:0,y:0};
-let ROBOT_CONFIG = {diameter:1.5};
+let ROBOT_CONFIG = {diameter:1.5, capacity:10};
 let optimizedPath = [], simulationActive = false, simulationStep = 0;
+let mousePos = null;
 
 const PRIORITY_COLORS = {1:'#e74c3c',2:'#f39c12',3:'#f1c40f',4:'#2ecc71',5:'#3498db'};
 
@@ -117,12 +122,22 @@ document.getElementById('scale').onchange = function() {
 document.getElementById('robotDiameter').onchange = function() {
     ROBOT_CONFIG.diameter = parseFloat(this.value);
 };
+document.getElementById('robotCapacity').onchange = function() {
+    ROBOT_CONFIG.capacity = parseFloat(this.value);
+};
 document.getElementById('shapeType').onchange = function() {
     shapeMode = this.value;
 };
 
 canvas.addEventListener('mousedown', handleMouseDown);
-canvas.addEventListener('mousemove', handleMouseMove);
+canvas.addEventListener('mousemove', function(e) {
+    mousePos = getMousePosition(e);
+    handleMouseMove(e);
+});
+canvas.addEventListener('mouseleave', function() {
+    mousePos = null;
+    redraw();
+});
 canvas.addEventListener('mouseup', handleMouseUp);
 
 function getMousePosition(e) {
@@ -187,6 +202,26 @@ function redraw() {
     }
     if(optimizedPath.length>1) drawPath(optimizedPath);
     if(simulationActive && simulationStep < optimizedPath.length) drawRobot(optimizedPath[simulationStep]);
+    if(mousePos) drawCustomCursor(mousePos);
+    if(isDrawing && shapeStart && ['rectangle','circle','line'].includes(shapeMode)) {
+        let world = screenToWorld(mousePos);
+        drawPreviewShape(shapeStart, world, shapeMode);
+    }
+    if(currentZone.length>0) drawCurrentZone();
+}
+function drawCustomCursor(pos) {
+    ctx.save();
+    ctx.strokeStyle = '#34495e';
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 7, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x - 10, pos.y);
+    ctx.lineTo(pos.x + 10, pos.y);
+    ctx.moveTo(pos.x, pos.y - 10);
+    ctx.lineTo(pos.x, pos.y + 10);
+    ctx.stroke();
+    ctx.restore();
 }
 function drawGrid() {
     ctx.save();
@@ -245,6 +280,17 @@ function drawPreviewShape(start,end,type){
     ctx.moveTo(pts[0].x,pts[0].y);
     for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
     ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    // Affiche les dimensions pour un rectangle
+    if(type === 'rectangle') {
+        let width = Math.abs(end.x - start.x) / scale;
+        let height = Math.abs(end.y - start.y) / scale;
+        ctx.fillStyle = '#2c3e50';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${width.toFixed(2)}m x ${height.toFixed(2)}m`, (start.x + end.x) / 2, (start.y + end.y) / 2);
+    }
     ctx.restore();
 }
 function drawCurrentZone() {
@@ -276,7 +322,10 @@ function handleMouseDown(e) {
     }
 }
 function handleMouseMove(e) {
-    if(!isDrawing) return;
+    if(!isDrawing) {
+        redraw();
+        return;
+    }
     let world = screenToWorld(getMousePosition(e));
     if(shapeMode==="freehand") {
         currentZone.push(world);
@@ -388,7 +437,6 @@ function generateCoveragePathForRectangle(rectPoints, robotDiameter) {
 }
 
 // --- Grille/Pathfinding ---
-// Grille fine, obstacles/murs élargis selon rayon robot
 function makeGrid(cellSize=10){
     let width = canvas.width, height = canvas.height;
     let cols = Math.ceil(width / cellSize), rows = Math.ceil(height / cellSize);
@@ -467,7 +515,7 @@ function astar(start, end, gridObj) {
     return [start,end];
 }
 
-// --- Génération du chemin ---
+// --- Génération du chemin optimisé avec gestion de capacité ---
 function generateOptimizedPath() {
     if (!chargingStation || zones.length === 0) {
         alert("Ajoute une station de recharge et au moins une zone !");
@@ -476,23 +524,50 @@ function generateOptimizedPath() {
     let path = [];
     let current = { x: chargingStation.x, y: chargingStation.y };
     let robotDiameter = ROBOT_CONFIG.diameter;
+    let robotCapacity = ROBOT_CONFIG.capacity;
     let gridObj = makeGrid(10); // Grille fine
-    zones.forEach(zone => {
-        if (zone.points.length === 4) {
-            let coverage = generateCoveragePathForRectangle(zone.points, robotDiameter);
-            let seg = astar(current, coverage[0], gridObj);
-            for(let p of seg) path.push(p);
-            for (let i=0;i<coverage.length-1;i++) path.push(coverage[i+1]);
-            current = coverage[coverage.length - 1];
-        } else {
-            let center = getPolygonCenter(zone.points);
-            let seg = astar(current, center, gridObj);
-            for(let p of seg) path.push(p);
-            current = center;
+    let currentLoad = 0;
+
+    let remainingZones = zones.map((z, idx) => ({...z, idx, done: false})); // pour tracking
+    // Parcours simple (ordre de la liste)
+    for(let i=0; i<remainingZones.length; i++) {
+        let zone = remainingZones[i];
+        if(zone.done) continue;
+        let area = getPolygonArea(zone.points);
+        let dirt = area * zone.dirtLevel;
+        // Si dépasser, retour station puis reprendre
+        if(currentLoad + dirt > robotCapacity) {
+            // Retour station
+            let segToStation = astar(current, chargingStation, gridObj);
+            for(let p of segToStation) path.push(p);
+            current = { x: chargingStation.x, y: chargingStation.y };
+            currentLoad = 0;
         }
-    });
-    let ret = astar(current, { x: chargingStation.x, y: chargingStation.y }, gridObj);
-    for(let p of ret) path.push(p);
+        // Déplacement vers la zone
+        let zoneEntry;
+        if(zone.points.length === 4) {
+            let coverage = generateCoveragePathForRectangle(zone.points, robotDiameter);
+            zoneEntry = coverage[0];
+            // Aller du point courant à la zone d'entrée
+            let seg = astar(current, zoneEntry, gridObj);
+            for(let p of seg) path.push(p);
+            // Nettoyer la zone (ajoute tous les points du coverage)
+            for(let k=0;k<coverage.length;k++) path.push(coverage[k]);
+            current = coverage[coverage.length-1];
+        } else {
+            zoneEntry = getPolygonCenter(zone.points);
+            let seg = astar(current, zoneEntry, gridObj);
+            for(let p of seg) path.push(p);
+            current = zoneEntry;
+        }
+        currentLoad += dirt;
+        remainingZones[i].done = true;
+    }
+    // Retour station final si pas déjà là
+    if(current.x !== chargingStation.x || current.y !== chargingStation.y) {
+        let ret = astar(current, { x: chargingStation.x, y: chargingStation.y }, gridObj);
+        for(let p of ret) path.push(p);
+    }
     optimizedPath = path;
     document.getElementById("totalDistance").textContent = computeTotalPathDistance(path).toFixed(2) + " m";
     redraw();
