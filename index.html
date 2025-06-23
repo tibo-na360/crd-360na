@@ -37,6 +37,18 @@
     <h1>🤖 Optimisateur Robot Aspirateur Pathfinding</h1>
     <div class="controls">
         <div class="control-group">
+            <label>📁 Import DXF</label>
+            <input type="file" id="dxfInput" accept=".dxf" style="display:none;">
+            <button onclick="document.getElementById('dxfInput').click()" style="background: linear-gradient(135deg, #16a085, #27ae60);">
+                📂 Charger DXF
+            </button>
+            <select id="dxfImportType" style="margin-top: 5px;">
+                <option value="wall">Importer comme Murs</option>
+                <option value="zone">Importer comme Zones</option>
+                <option value="obstacle">Importer comme Obstacles</option>
+            </select>
+        </div>
+        <div class="control-group">
             <label>Forme géométrique</label>
             <select id="shapeType">
                 <option value="freehand">Dessin libre</option>
@@ -1040,6 +1052,246 @@ updateMeasurePanel();
 redraw();
 updateZoneList();
 updateStats();
+
+// Import DXF
+document.getElementById('dxfInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file && file.name.toLowerCase().endsWith('.dxf')) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            parseDXF(event.target.result);
+        };
+        reader.readAsText(file);
+    }
+});
+
+// Parser DXF simple
+function parseDXF(dxfContent) {
+    const lines = dxfContent.split('\n');
+    const entities = [];
+    let currentEntity = null;
+    let i = 0;
+    
+    // Trouver la section ENTITIES
+    while (i < lines.length && lines[i].trim() !== 'ENTITIES') {
+        i++;
+    }
+    i++; // Passer ENTITIES
+    
+    // Variables pour stocker les coordonnées min/max pour l'échelle automatique
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+    
+    // Parser les entités
+    while (i < lines.length && lines[i].trim() !== 'ENDSEC') {
+        const code = parseInt(lines[i].trim());
+        const value = lines[i + 1].trim();
+        
+        if (code === 0) { // Nouveau type d'entité
+            if (currentEntity) {
+                entities.push(currentEntity);
+            }
+            
+            if (value === 'LINE' || value === 'LWPOLYLINE' || value === 'POLYLINE' || 
+                value === 'CIRCLE' || value === 'ARC') {
+                currentEntity = {
+                    type: value,
+                    points: [],
+                    properties: {}
+                };
+            } else {
+                currentEntity = null;
+            }
+        } else if (currentEntity) {
+            switch (code) {
+                case 10: // X coordinate
+                    currentEntity.x1 = parseFloat(value);
+                    minX = Math.min(minX, currentEntity.x1);
+                    maxX = Math.max(maxX, currentEntity.x1);
+                    break;
+                case 20: // Y coordinate
+                    currentEntity.y1 = parseFloat(value);
+                    minY = Math.min(minY, currentEntity.y1);
+                    maxY = Math.max(maxY, currentEntity.y1);
+                    break;
+                case 11: // End X (for LINE)
+                    currentEntity.x2 = parseFloat(value);
+                    minX = Math.min(minX, currentEntity.x2);
+                    maxX = Math.max(maxX, currentEntity.x2);
+                    break;
+                case 21: // End Y (for LINE)
+                    currentEntity.y2 = parseFloat(value);
+                    minY = Math.min(minY, currentEntity.y2);
+                    maxY = Math.max(maxY, currentEntity.y2);
+                    break;
+                case 40: // Radius (for CIRCLE)
+                    currentEntity.radius = parseFloat(value);
+                    break;
+                case 50: // Start angle (for ARC)
+                    currentEntity.startAngle = parseFloat(value) * Math.PI / 180;
+                    break;
+                case 51: // End angle (for ARC)
+                    currentEntity.endAngle = parseFloat(value) * Math.PI / 180;
+                    break;
+            }
+            
+            // Pour LWPOLYLINE, capturer les vertex
+            if (currentEntity.type === 'LWPOLYLINE' && code === 10) {
+                currentEntity.points.push({x: currentEntity.x1, y: currentEntity.y1});
+            }
+        }
+        
+        i += 2;
+    }
+    
+    if (currentEntity) {
+        entities.push(currentEntity);
+    }
+    
+    // Calculer l'échelle pour adapter au canvas
+    if (entities.length > 0 && minX !== Infinity) {
+        const dxfWidth = maxX - minX;
+        const dxfHeight = maxY - minY;
+        const canvasMargin = 50;
+        const availableWidth = canvas.width - 2 * canvasMargin;
+        const availableHeight = canvas.height - 2 * canvasMargin;
+        
+        const scaleX = availableWidth / dxfWidth;
+        const scaleY = availableHeight / dxfHeight;
+        const importScale = Math.min(scaleX, scaleY) * 0.8; // 80% pour avoir une marge
+        
+        const offsetX = canvasMargin + (availableWidth - dxfWidth * importScale) / 2;
+        const offsetY = canvasMargin + (availableHeight - dxfHeight * importScale) / 2;
+        
+        // Convertir les entités en formes
+        const importType = document.getElementById('dxfImportType').value;
+        let importedCount = 0;
+        
+        entities.forEach(entity => {
+            let points = [];
+            
+            switch (entity.type) {
+                case 'LINE':
+                    if (entity.x1 !== undefined && entity.y1 !== undefined && 
+                        entity.x2 !== undefined && entity.y2 !== undefined) {
+                        // Créer un rectangle fin pour représenter la ligne (mur)
+                        const dx = entity.x2 - entity.x1;
+                        const dy = entity.y2 - entity.y1;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+                        const thickness = 0.2; // 20cm d'épaisseur
+                        
+                        if (length > 0) {
+                            const ux = -dy / length * thickness;
+                            const uy = dx / length * thickness;
+                            
+                            points = [
+                                {x: (entity.x1 - minX) * importScale + offsetX + ux * importScale,
+                                 y: canvas.height - ((entity.y1 - minY) * importScale + offsetY) + uy * importScale},
+                                {x: (entity.x2 - minX) * importScale + offsetX + ux * importScale,
+                                 y: canvas.height - ((entity.y2 - minY) * importScale + offsetY) + uy * importScale},
+                                {x: (entity.x2 - minX) * importScale + offsetX - ux * importScale,
+                                 y: canvas.height - ((entity.y2 - minY) * importScale + offsetY) - uy * importScale},
+                                {x: (entity.x1 - minX) * importScale + offsetX - ux * importScale,
+                                 y: canvas.height - ((entity.y1 - minY) * importScale + offsetY) - uy * importScale}
+                            ];
+                        }
+                    }
+                    break;
+                    
+                case 'LWPOLYLINE':
+                case 'POLYLINE':
+                    if (entity.points.length > 0) {
+                        points = entity.points.map(p => ({
+                            x: (p.x - minX) * importScale + offsetX,
+                            y: canvas.height - ((p.y - minY) * importScale + offsetY)
+                        }));
+                    }
+                    break;
+                    
+                case 'CIRCLE':
+                    if (entity.x1 !== undefined && entity.y1 !== undefined && entity.radius !== undefined) {
+                        const centerX = (entity.x1 - minX) * importScale + offsetX;
+                        const centerY = canvas.height - ((entity.y1 - minY) * importScale + offsetY);
+                        const radius = entity.radius * importScale;
+                        
+                        // Créer un polygone pour approcher le cercle
+                        for (let angle = 0; angle < 2 * Math.PI; angle += Math.PI / 16) {
+                            points.push({
+                                x: centerX + Math.cos(angle) * radius,
+                                y: centerY + Math.sin(angle) * radius
+                            });
+                        }
+                    }
+                    break;
+                    
+                case 'ARC':
+                    if (entity.x1 !== undefined && entity.y1 !== undefined && entity.radius !== undefined) {
+                        const centerX = (entity.x1 - minX) * importScale + offsetX;
+                        const centerY = canvas.height - ((entity.y1 - minY) * importScale + offsetY);
+                        const radius = entity.radius * importScale;
+                        const startAngle = entity.startAngle || 0;
+                        const endAngle = entity.endAngle || 2 * Math.PI;
+                        
+                        // Créer un arc
+                        let angle = startAngle;
+                        const angleStep = Math.PI / 32;
+                        while (angle <= endAngle) {
+                            points.push({
+                                x: centerX + Math.cos(angle) * radius,
+                                y: centerY + Math.sin(angle) * radius
+                            });
+                            angle += angleStep;
+                        }
+                        
+                        // Ajouter le point final
+                        points.push({
+                            x: centerX + Math.cos(endAngle) * radius,
+                            y: centerY + Math.sin(endAngle) * radius
+                        });
+                    }
+                    break;
+            }
+            
+            // Ajouter la forme si elle a des points valides
+            if (points.length >= 2) {
+                const id = Date.now() + importedCount;
+                
+                if (importType === 'zone') {
+                    zones.push({
+                        points: points,
+                        priority: 3, // Priorité normale par défaut
+                        dirtLevel: 3, // Niveau moyen par défaut
+                        id: id
+                    });
+                } else if (importType === 'obstacle') {
+                    obstacles.push({
+                        points: points,
+                        id: id
+                    });
+                } else if (importType === 'wall') {
+                    walls.push({
+                        points: points,
+                        id: id
+                    });
+                }
+                
+                importedCount++;
+            }
+        });
+        
+        // Mettre à jour l'affichage
+        updateZoneList();
+        updateStats();
+        redraw();
+        
+        // Message de confirmation
+        const typeLabel = importType === 'zone' ? 'zones' : 
+                         importType === 'obstacle' ? 'obstacles' : 'murs';
+        alert(`Import DXF réussi !\n${importedCount} ${typeLabel} importé(s)\n\nDimensions détectées :\nLargeur : ${dxfWidth.toFixed(2)} unités\nHauteur : ${dxfHeight.toFixed(2)} unités`);
+    } else {
+        alert("Aucune entité valide trouvée dans le fichier DXF.");
+    }
+}
 
 // Rendre les fonctions globales
 window.generateOptimizedPath = generateOptimizedPath;
