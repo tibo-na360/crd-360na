@@ -6,24 +6,29 @@
     <title>Optimisateur Robot Aspirateur Pathfinding</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; margin: 0; padding: 0;}
-        .container {max-width: 1300px; margin: 30px auto; background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); padding: 30px;}
+        .container {max-width: 1400px; margin: 30px auto; background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.1); padding: 30px;}
         h1 {text-align: center; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; margin-bottom: 20px;}
         .controls {display: flex; flex-wrap: wrap; gap: 25px; margin-bottom: 20px;}
-        .control-group {display: flex; flex-direction: column; gap: 7px; min-width: 200px;}
-        label { font-weight: 600; color: #2c3e50; }
+        .control-group {display: flex; flex-direction: column; gap: 7px; min-width: 150px;}
+        label { font-weight: 600; color: #2c3e50; font-size: 0.9rem; }
         input, select, button {padding: 10px; border: 2px solid #e3e8ef; border-radius: 10px; font-size: 1rem; background: white; transition: border 0.2s;}
         input:focus, select:focus { border-color: #667eea; }
         button { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; cursor: pointer; font-weight: 600;}
         button:hover { background: linear-gradient(135deg, #764ba2, #667eea);}
         .workspace { display: flex; gap: 25px; min-height: 600px;}
         .canvas-container {flex: 2; background: #fff; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); position: relative; min-width: 600px;}
-        canvas {display: block; background: #fafbfc; border-radius: 15px; border: 1px solid #e3e8ef; width: 100%; height: 600px;}
-        .sidebar {flex: 1; background: #f5f6fa; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.07); min-width: 300px;}
-        .zone-list { max-height: 180px; overflow-y: auto; margin-bottom: 15px;}
-        .zone-item {display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 8px; padding: 6px 12px; margin-bottom: 5px; font-size: 0.95em; border-left: 5px solid #ccc;}
+        canvas {display: block; background: #fafbfc; border-radius: 15px; border: 1px solid #e3e8ef; width: 100%; height: 600px; cursor: crosshair;}
+        .sidebar {flex: 1; background: #f5f6fa; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.07); min-width: 350px; overflow-y: auto; max-height: 600px;}
+        .zone-list { max-height: 200px; overflow-y: auto; margin-bottom: 15px;}
+        .zone-item {display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; font-size: 0.9em; border-left: 5px solid #ccc;}
         .stat-block {background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; color: white; padding: 15px; margin-top: 12px;}
-        .stat-block div { margin: 6px 0; }
+        .stat-block div { margin: 8px 0; font-size: 0.9rem; }
         .action-buttons button {margin: 7px 0; width: 100%;}
+        .measure-info {background: #f0f4ff; padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 0.9rem;}
+        .measure-info input {width: 80px; margin: 0 5px;}
+        .session-info {background: #e8f5e9; padding: 10px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #4caf50;}
+        .session-info h4 {margin: 0 0 5px 0; color: #2e7d32;}
+        .delete-btn {background: #e74c3c !important; padding: 5px 10px !important; font-size: 0.8rem !important; margin-left: 10px;}
         @media (max-width: 900px) {.workspace { flex-direction: column; } .canvas-container, .sidebar { min-width: 0; }}
     </style>
 </head>
@@ -71,33 +76,54 @@
         </div>
         <div class="control-group">
             <label>Robot diamètre (m)</label>
-            <input type="number" id="robotDiameter" value="1.5" min="0.4" max="3" step="0.01" style="width:90px;">
+            <input type="number" id="robotDiameter" value="0.35" min="0.2" max="1" step="0.01" style="width:90px;">
         </div>
         <div class="control-group">
             <label>Robot capacité (L)</label>
-            <input type="number" id="robotCapacity" value="10" min="1" max="100" step="0.1" style="width:90px;">
+            <input type="number" id="robotCapacity" value="350" min="100" max="1000" step="10" style="width:90px;">
         </div>
         <div class="control-group">
             <label>Échelle (px/m)</label>
             <input type="number" id="scale" value="50" min="10" max="200" style="width:80px;">
         </div>
     </div>
+    
+    <!-- Panneau de mesures pour formes prédéfinies -->
+    <div class="measure-info" id="measurePanel" style="display:none;">
+        <strong>📏 Dimensions de la forme :</strong>
+        <span id="rectDimensions" style="display:none;">
+            Largeur: <input type="number" id="rectWidth" value="5" min="0.5" max="50" step="0.5"> m
+            Hauteur: <input type="number" id="rectHeight" value="3" min="0.5" max="50" step="0.5"> m
+        </span>
+        <span id="circleDimensions" style="display:none;">
+            Rayon: <input type="number" id="circleRadius" value="2" min="0.5" max="25" step="0.5"> m
+        </span>
+    </div>
+    
     <div class="workspace">
         <div class="canvas-container">
             <canvas id="canvas" width="900" height="600"></canvas>
         </div>
         <div class="sidebar">
             <div class="action-buttons">
-                <button onclick="generateOptimizedPath()">🔄 Générer Trajectoire Optimisée</button>
+                <button onclick="generateOptimizedPath()">🔄 Générer Trajectoires Optimisées</button>
                 <button onclick="simulateRobot()">▶️ Simuler Robot</button>
+                <button onclick="clearSessions()" style="background: linear-gradient(135deg,#ff9800,#f57c00);">🧹 Effacer Sessions</button>
                 <button onclick="clearAll()" style="background: linear-gradient(135deg,#e74c3c,#c0392b);">🗑️ Effacer Tout</button>
             </div>
-            <h3>Zones / Obstacles :</h3>
+            
+            <h3>📋 Zones / Obstacles :</h3>
             <div class="zone-list" id="zoneList"></div>
+            
+            <h3>🔄 Sessions de nettoyage :</h3>
+            <div id="sessionsList"></div>
+            
             <div class="stat-block">
-                <div>Surface totale : <span id="totalArea">0 m²</span></div>
-                <div>Volume saleté : <span id="totalDirt">0 L</span></div>
-                <div>Distance trajet : <span id="totalDistance">0 m</span></div>
+                <div>📐 Surface totale : <strong><span id="totalArea">0</span> m²</strong></div>
+                <div>🗑️ Volume saleté : <strong><span id="totalDirt">0</span> L</strong></div>
+                <div>📏 Distance totale : <strong><span id="totalDistance">0</span> m</strong></div>
+                <div>🔋 Sessions nécessaires : <strong><span id="sessionsCount">0</span></strong></div>
+                <div>⏱️ Temps estimé : <strong><span id="totalTime">0</span> min</strong></div>
             </div>
         </div>
     </div>
@@ -110,12 +136,16 @@ let chargingStation = null;
 let currentZone = [];
 let isDrawing = false, shapeStart = null, shapeMode = 'freehand';
 let scale = 50, zoomLevel = 1, viewOffset = {x:0,y:0};
-let ROBOT_CONFIG = {diameter:1.5, capacity:10};
-let optimizedPath = [], simulationActive = false, simulationStep = 0;
+let ROBOT_CONFIG = {diameter:0.35, capacity:350, speed:0.5}; // speed en m/s
+let sessions = []; // Tableau des sessions de nettoyage
+let currentSessionIndex = 0;
+let simulationActive = false, simulationStep = 0;
 let mousePos = null;
 
 const PRIORITY_COLORS = {1:'#e74c3c',2:'#f39c12',3:'#f1c40f',4:'#2ecc71',5:'#3498db'};
+const SESSION_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#34495e','#e67e22','#95a5a6','#d35400'];
 
+// Event listeners pour les contrôles
 document.getElementById('scale').onchange = function() {
     scale = parseInt(this.value); redraw();
 };
@@ -127,7 +157,27 @@ document.getElementById('robotCapacity').onchange = function() {
 };
 document.getElementById('shapeType').onchange = function() {
     shapeMode = this.value;
+    updateMeasurePanel();
 };
+
+// Afficher/masquer le panneau de mesures
+function updateMeasurePanel() {
+    let panel = document.getElementById('measurePanel');
+    let rectDim = document.getElementById('rectDimensions');
+    let circleDim = document.getElementById('circleDimensions');
+    
+    if(shapeMode === 'rectangle') {
+        panel.style.display = 'block';
+        rectDim.style.display = 'inline';
+        circleDim.style.display = 'none';
+    } else if(shapeMode === 'circle') {
+        panel.style.display = 'block';
+        rectDim.style.display = 'none';
+        circleDim.style.display = 'inline';
+    } else {
+        panel.style.display = 'none';
+    }
+}
 
 canvas.addEventListener('mousedown', handleMouseDown);
 canvas.addEventListener('mousemove', function(e) {
@@ -144,21 +194,26 @@ function getMousePosition(e) {
     let rect = canvas.getBoundingClientRect();
     return {x: (e.clientX-rect.left), y:(e.clientY-rect.top)};
 }
+
 function screenToWorld(pt) {
     return {x:(pt.x-viewOffset.x)/zoomLevel, y:(pt.y-viewOffset.y)/zoomLevel};
 }
+
 function worldToScreen(pt) {
     return {x:pt.x*zoomLevel+viewOffset.x, y:pt.y*zoomLevel+viewOffset.y};
 }
+
 function getPolygonCenter(points) {
     let cx=0,cy=0;
     for(let p of points){cx+=p.x;cy+=p.y;}
     return {x:cx/points.length,y:cy/points.length};
 }
+
 function getDistance(a,b) {
     let dx=a.x-b.x,dy=a.y-b.y;
-    return Math.sqrt(dx*dx+dy*dy)/scale;
+    return Math.sqrt(dx*dx+dy*dy);
 }
+
 function getPolygonArea(points){
     let a=0;
     for(let i=0;i<points.length;i++){
@@ -171,156 +226,242 @@ function getPolygonArea(points){
 function redraw() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
     drawGrid();
+    
+    // Dessiner les murs
     for(let wall of walls){
-        ctx.strokeStyle = '#34495e'; ctx.lineWidth = 3/zoomLevel;
-        drawPolygon(wall.points, false);
+        ctx.strokeStyle = '#34495e'; 
+        ctx.lineWidth = 4;
+        ctx.fillStyle = 'rgba(52, 73, 94, 0.3)';
+        drawPolygon(wall.points, true);
     }
+    
+    // Dessiner les obstacles
     for(let ob of obstacles){
-        ctx.fillStyle='rgba(231,76,60,0.6)'; ctx.strokeStyle='#e74c3c'; ctx.lineWidth=2/zoomLevel;
+        ctx.fillStyle='rgba(231,76,60,0.6)'; 
+        ctx.strokeStyle='#e74c3c'; 
+        ctx.lineWidth=2;
         drawPolygon(ob.points,true);
     }
+    
+    // Dessiner les zones
     for(let zone of zones){
         let color = PRIORITY_COLORS[zone.priority];
-        ctx.fillStyle = color+'33'; ctx.strokeStyle = color;
-        ctx.lineWidth = 2/zoomLevel;
+        ctx.fillStyle = color+'33'; 
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
         drawPolygon(zone.points,true);
         let c = getPolygonCenter(zone.points);
-        ctx.fillStyle='#2c3e50'; ctx.font=`${12/zoomLevel}px Arial`;
+        ctx.fillStyle='#2c3e50'; 
+        ctx.font='bold 14px Arial';
         ctx.textAlign='center';
         ctx.fillText(`${zone.dirtLevel}L/m²`,c.x,c.y);
     }
+    
+    // Dessiner la station de recharge
     if(chargingStation){
         ctx.save();
+        // Base
         ctx.fillStyle="#27ae60";
         ctx.beginPath();
-        ctx.arc(chargingStation.x,chargingStation.y,15/zoomLevel,0,2*Math.PI);
+        ctx.arc(chargingStation.x,chargingStation.y,20,0,2*Math.PI);
         ctx.fill();
         ctx.strokeStyle="#145a32";
-        ctx.lineWidth = 4/zoomLevel;
+        ctx.lineWidth = 3;
         ctx.stroke();
+        // Symbole éclair
+        ctx.fillStyle = "white";
+        ctx.font = "bold 20px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("⚡", chargingStation.x, chargingStation.y);
         ctx.restore();
     }
-    if(optimizedPath.length>1) drawPath(optimizedPath);
-    if(simulationActive && simulationStep < optimizedPath.length) drawRobot(optimizedPath[simulationStep]);
+    
+    // Dessiner toutes les sessions
+    for(let i = 0; i < sessions.length; i++) {
+        if(sessions[i] && sessions[i].path && sessions[i].path.length > 0) {
+            drawSessionPath(sessions[i].path, SESSION_COLORS[i % SESSION_COLORS.length], i);
+        }
+    }
+    
+    // Dessiner le robot en simulation
+    if(simulationActive && sessions[currentSessionIndex]) {
+        let session = sessions[currentSessionIndex];
+        if(simulationStep < session.path.length) {
+            drawRobot(session.path[simulationStep]);
+        }
+    }
+    
+    // Dessiner le curseur personnalisé
     if(mousePos) drawCustomCursor(mousePos);
+    
+    // Dessiner l'aperçu de forme
     if(isDrawing && shapeStart && ['rectangle','circle','line'].includes(shapeMode)) {
         let world = screenToWorld(mousePos);
         drawPreviewShape(shapeStart, world, shapeMode);
     }
+    
+    // Dessiner la zone actuelle en dessin libre
     if(currentZone.length>0) drawCurrentZone();
 }
+
 function drawCustomCursor(pos) {
     ctx.save();
-    ctx.strokeStyle = '#34495e';
+    ctx.strokeStyle = '#667eea';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 7, 0, 2 * Math.PI);
+    ctx.arc(pos.x, pos.y, 8, 0, 2 * Math.PI);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(pos.x - 10, pos.y);
-    ctx.lineTo(pos.x + 10, pos.y);
-    ctx.moveTo(pos.x, pos.y - 10);
-    ctx.lineTo(pos.x, pos.y + 10);
+    ctx.moveTo(pos.x - 12, pos.y);
+    ctx.lineTo(pos.x + 12, pos.y);
+    ctx.moveTo(pos.x, pos.y - 12);
+    ctx.lineTo(pos.x, pos.y + 12);
     ctx.stroke();
     ctx.restore();
 }
+
 function drawGrid() {
     ctx.save();
-    ctx.strokeStyle="#ecf0f1"; ctx.lineWidth=1/zoomLevel;
+    ctx.strokeStyle="#ecf0f1"; 
+    ctx.lineWidth=1;
     let gridSize=scale;
     let w=canvas.width, h=canvas.height;
-    for(let x=0; x<w; x+=gridSize*zoomLevel) {
-        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+    for(let x=0; x<w; x+=gridSize) {
+        ctx.beginPath(); 
+        ctx.moveTo(x,0); 
+        ctx.lineTo(x,h); 
+        ctx.stroke();
     }
-    for(let y=0; y<h; y+=gridSize*zoomLevel) {
-        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+    for(let y=0; y<h; y+=gridSize) {
+        ctx.beginPath(); 
+        ctx.moveTo(0,y); 
+        ctx.lineTo(w,y); 
+        ctx.stroke();
     }
     ctx.restore();
 }
+
 function drawPolygon(points, fill) {
     if(points.length==0) return;
     ctx.beginPath();
     ctx.moveTo(points[0].x,points[0].y);
     for(let i=1;i<points.length;i++) ctx.lineTo(points[i].x,points[i].y);
     ctx.closePath();
-    fill?ctx.fill():ctx.stroke();
+    if(fill) ctx.fill();
+    ctx.stroke();
 }
-function drawPath(path) {
+
+function drawSessionPath(path, color, sessionIndex) {
     if (path.length < 2) return;
     ctx.save();
-    ctx.strokeStyle = "#8e44ad";
-    ctx.lineWidth = 4 / zoomLevel;
-    ctx.setLineDash([]);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 5]);
+    ctx.globalAlpha = 0.7;
     ctx.beginPath();
     ctx.moveTo(path[0].x, path[0].y);
     for (let i = 1; i < path.length; i++) {
         ctx.lineTo(path[i].x, path[i].y);
     }
     ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Numéro de session au début
+    ctx.fillStyle = color;
+    ctx.font = "bold 16px Arial";
+    ctx.globalAlpha = 1;
+    ctx.fillText(`S${sessionIndex + 1}`, path[0].x + 20, path[0].y - 10);
     ctx.restore();
 }
+
 function drawRobot(pos) {
     ctx.save();
     ctx.fillStyle="#2980b9";
+    ctx.globalAlpha = 0.8;
     ctx.beginPath();
     ctx.arc(pos.x,pos.y,ROBOT_CONFIG.diameter*scale/2,0,2*Math.PI);
     ctx.fill();
     ctx.strokeStyle="#154360";
-    ctx.lineWidth=3/zoomLevel;
+    ctx.lineWidth=3;
     ctx.stroke();
+    // Œil du robot pour indiquer la direction
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.arc(pos.x + 5, pos.y - 5, 3, 0, 2*Math.PI);
+    ctx.fill();
     ctx.restore();
 }
+
 function drawPreviewShape(start,end,type){
-    let pts = createGeometricShape(start,end,type);
+    let pts = createPredefinedShape(start,type);
     if(!pts.length) return;
     ctx.save();
-    ctx.strokeStyle='#3498db'; ctx.lineWidth=2/zoomLevel;
-    ctx.setLineDash([5/zoomLevel,5/zoomLevel]);
-    ctx.fillStyle='rgba(52,152,219,0.2)';
+    ctx.strokeStyle='#667eea'; 
+    ctx.lineWidth=2;
+    ctx.setLineDash([5,5]);
+    ctx.fillStyle='rgba(102,126,234,0.2)';
     ctx.beginPath();
     ctx.moveTo(pts[0].x,pts[0].y);
     for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
-
-    // Affiche les dimensions pour un rectangle
+    ctx.closePath(); 
+    ctx.fill(); 
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Afficher les dimensions
+    ctx.fillStyle = '#2c3e50';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
     if(type === 'rectangle') {
-        let width = Math.abs(end.x - start.x) / scale;
-        let height = Math.abs(end.y - start.y) / scale;
-        ctx.fillStyle = '#2c3e50';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(`${width.toFixed(2)}m x ${height.toFixed(2)}m`, (start.x + end.x) / 2, (start.y + end.y) / 2);
+        let width = parseFloat(document.getElementById('rectWidth').value);
+        let height = parseFloat(document.getElementById('rectHeight').value);
+        let center = getPolygonCenter(pts);
+        ctx.fillText(`${width}m × ${height}m`, center.x, center.y);
+    } else if(type === 'circle') {
+        let radius = parseFloat(document.getElementById('circleRadius').value);
+        ctx.fillText(`r=${radius}m`, start.x, start.y);
     }
     ctx.restore();
 }
+
 function drawCurrentZone() {
     if(currentZone.length==0) return;
     ctx.save();
-    ctx.strokeStyle='#3498db'; ctx.lineWidth=2/zoomLevel;
-    ctx.setLineDash([5/zoomLevel,5/zoomLevel]);
+    ctx.strokeStyle='#667eea'; 
+    ctx.lineWidth=2;
+    ctx.setLineDash([5,5]);
     ctx.beginPath();
     ctx.moveTo(currentZone[0].x,currentZone[0].y);
     for(let i=1;i<currentZone.length;i++) ctx.lineTo(currentZone[i].x,currentZone[i].y);
-    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    ctx.stroke(); 
+    ctx.setLineDash([]); 
+    ctx.restore();
 }
 
 function handleMouseDown(e) {
     let world = screenToWorld(getMousePosition(e));
     let elementType = document.getElementById('elementType').value;
     let shapeType = document.getElementById('shapeType').value;
+    
     if(elementType === "charging") {
         chargingStation = {x:world.x, y:world.y};
         redraw();
         return;
     }
+    
     shapeMode = shapeType;
     if(['rectangle','circle','line'].includes(shapeMode)){
         shapeStart = world;
         isDrawing = true;
     } else {
-        isDrawing = true; currentZone = [world];
+        isDrawing = true; 
+        currentZone = [world];
     }
 }
+
 function handleMouseMove(e) {
     if(!isDrawing) {
         redraw();
@@ -336,6 +477,7 @@ function handleMouseMove(e) {
         drawPreviewShape(shapeStart,world,shapeMode);
     }
 }
+
 function handleMouseUp(e) {
     if(!isDrawing) return;
     isDrawing = false;
@@ -343,8 +485,9 @@ function handleMouseUp(e) {
     let elementType = document.getElementById('elementType').value;
     let priority = parseInt(document.getElementById('priority').value);
     let dirtLevel = parseInt(document.getElementById('dirtLevel').value);
+    
     if(['rectangle','circle','line'].includes(shapeMode)&&shapeStart){
-        let shape = createGeometricShape(shapeStart,world,shapeMode);
+        let shape = createPredefinedShape(shapeStart,shapeMode);
         if(shape&&shape.length>2) addShapeToLayer(shape,elementType,priority,dirtLevel);
         shapeStart=null;
     } else if(shapeMode==="freehand"&&currentZone.length>2){
@@ -353,6 +496,43 @@ function handleMouseUp(e) {
     currentZone=[];
     redraw();
 }
+
+function createPredefinedShape(start,type){
+    let pts=[];
+    switch(type){
+        case'rectangle':
+            let width = parseFloat(document.getElementById('rectWidth').value) * scale;
+            let height = parseFloat(document.getElementById('rectHeight').value) * scale;
+            pts.push(
+                {x:start.x,y:start.y},
+                {x:start.x+width,y:start.y},
+                {x:start.x+width,y:start.y+height},
+                {x:start.x,y:start.y+height}
+            );
+            break;
+        case'circle':
+            let radius = parseFloat(document.getElementById('circleRadius').value) * scale;
+            let cx = start.x, cy = start.y;
+            for(let i=0;i<32;i++){
+                let a = (i/32)*2*Math.PI;
+                pts.push({x:cx+Math.cos(a)*radius,y:cy+Math.sin(a)*radius});
+            }
+            break;
+        case'line':
+            // Pour une ligne, on crée un mur de 10m de long et 0.2m d'épaisseur
+            let length = 10 * scale;
+            let thickness = 0.2 * scale;
+            pts.push(
+                {x:start.x,y:start.y-thickness/2},
+                {x:start.x+length,y:start.y-thickness/2},
+                {x:start.x+length,y:start.y+thickness/2},
+                {x:start.x,y:start.y+thickness/2}
+            );
+            break;
+    }
+    return pts;
+}
+
 function createGeometricShape(start,end,type){
     let pts=[];
     switch(type){
@@ -380,64 +560,116 @@ function createGeometricShape(start,end,type){
     }
     return pts;
 }
+
 function addShapeToLayer(pts,elementType,priority,dirtLevel){
+    let id = Date.now();
     if(elementType==="zone"){
-        zones.push({points:[...pts],priority:priority,dirtLevel:dirtLevel});
+        zones.push({points:[...pts],priority:priority,dirtLevel:dirtLevel,id:id});
     }else if(elementType==="obstacle"){
-        obstacles.push({points:[...pts]});
+        obstacles.push({points:[...pts],id:id});
     }else if(elementType==="wall"){
-        walls.push({points:[...pts]});
+        walls.push({points:[...pts],id:id});
     }
     updateZoneList();
     updateStats();
 }
+
 function updateZoneList(){
     let html="";
     zones.forEach((z,i)=>{
+        let area = getPolygonArea(z.points);
+        let volume = area * z.dirtLevel;
         html+=`<div class="zone-item" style="border-left-color:${PRIORITY_COLORS[z.priority]}">
-            Zone ${i+1} | Priorité ${z.priority} | ${z.dirtLevel}L/m²</div>`;
+            <span>Zone ${i+1} | P${z.priority} | ${area.toFixed(1)}m² | ${z.dirtLevel}L/m² | Vol: ${volume.toFixed(1)}L</span>
+            <button class="delete-btn" onclick="deleteZone(${i})">×</button>
+        </div>`;
+    });
+    obstacles.forEach((o,i)=>{
+        html+=`<div class="zone-item" style="border-left-color:#e74c3c">
+            <span>Obstacle ${i+1}</span>
+            <button class="delete-btn" onclick="deleteObstacle(${i})">×</button>
+        </div>`;
+    });
+    walls.forEach((w,i)=>{
+        html+=`<div class="zone-item" style="border-left-color:#34495e">
+            <span>Mur ${i+1}</span>
+            <button class="delete-btn" onclick="deleteWall(${i})">×</button>
+        </div>`;
     });
     document.getElementById("zoneList").innerHTML=html;
 }
+
+function deleteZone(index) {
+    zones.splice(index, 1);
+    updateZoneList();
+    updateStats();
+    redraw();
+}
+
+function deleteObstacle(index) {
+    obstacles.splice(index, 1);
+    updateZoneList();
+    redraw();
+}
+
+function deleteWall(index) {
+    walls.splice(index, 1);
+    updateZoneList();
+    redraw();
+}
+
 function updateStats(){
-    let totalA=0, totalD=0;
+    let totalA=0, totalD=0, totalDist=0;
     for(let z of zones){
         totalA += getPolygonArea(z.points);
         totalD += getPolygonArea(z.points)*z.dirtLevel;
     }
-    document.getElementById("totalArea").textContent=totalA.toFixed(1)+" m²";
-    document.getElementById("totalDirt").textContent=totalD.toFixed(1)+" L";
-}
-function clearAll(){
-    zones=[]; obstacles=[]; walls=[]; chargingStation=null; optimizedPath=[];
-    updateZoneList(); updateStats(); redraw();
-}
-
-// --- Couverture de rectangle ---
-function generateCoveragePathForRectangle(rectPoints, robotDiameter) {
-    let minX = Math.min(...rectPoints.map(p => p.x));
-    let maxX = Math.max(...rectPoints.map(p => p.x));
-    let minY = Math.min(...rectPoints.map(p => p.y));
-    let maxY = Math.max(...rectPoints.map(p => p.y));
-    let bandSpacing = robotDiameter * scale * 0.98;
-    let path = [];
-    let direction = 1;
-    for (let y = minY + bandSpacing / 2; y < maxY; y += bandSpacing) {
-        let x1 = minX, x2 = maxX;
-        if (direction === 1) {
-            path.push({ x: x1, y: y });
-            path.push({ x: x2, y: y });
-        } else {
-            path.push({ x: x2, y: y });
-            path.push({ x: x1, y: y });
+    
+    // Calculer la distance totale de toutes les sessions
+    for(let session of sessions) {
+        if(session.path) {
+            for(let i=1; i<session.path.length; i++) {
+                totalDist += getDistance(session.path[i-1], session.path[i]) / scale;
+            }
         }
-        direction *= -1;
     }
-    return path;
+    
+    // Temps estimé (vitesse du robot 0.5 m/s + temps de nettoyage 2min/m²)
+    let cleaningTime = totalA * 2; // 2 minutes par m²
+    let movementTime = totalDist / (ROBOT_CONFIG.speed * 60); // conversion en minutes
+    let totalTime = cleaningTime + movementTime;
+    
+    document.getElementById("totalArea").textContent=totalA.toFixed(1);
+    document.getElementById("totalDirt").textContent=totalD.toFixed(1);
+    document.getElementById("totalDistance").textContent=totalDist.toFixed(1);
+    document.getElementById("sessionsCount").textContent=sessions.length;
+    document.getElementById("totalTime").textContent=totalTime.toFixed(0);
 }
 
-// --- Grille/Pathfinding ---
-function makeGrid(cellSize=10){
+function updateSessionsList() {
+    let html = "";
+    sessions.forEach((session, i) => {
+        html += `<div class="session-info">
+            <h4 style="color: ${SESSION_COLORS[i % SESSION_COLORS.length]}">Session ${i+1}</h4>
+            <div>Volume: ${session.volume.toFixed(1)}L | Distance: ${session.distance.toFixed(1)}m</div>
+            <div>Zones: ${session.zones.map(z => zones.indexOf(z) + 1).join(', ')}</div>
+        </div>`;
+    });
+    document.getElementById("sessionsList").innerHTML = html;
+}
+
+function clearAll(){
+    zones=[]; obstacles=[]; walls=[]; chargingStation=null; sessions=[];
+    updateZoneList(); updateStats(); updateSessionsList(); redraw();
+}
+
+function clearSessions(){
+    sessions = [];
+    updateStats(); updateSessionsList(); redraw();
+}
+
+// --- Grille améliorée pour pathfinding ---
+function makeGrid(cellSize=5){
     let width = canvas.width, height = canvas.height;
     let cols = Math.ceil(width / cellSize), rows = Math.ceil(height / cellSize);
     let grid = [];
@@ -446,158 +678,377 @@ function makeGrid(cellSize=10){
         for(let x=0; x<cols; x++) row.push(0);
         grid.push(row);
     }
-    let markPolygon = (poly) => {
-        let minX=Math.min(...poly.map(p=>p.x)), maxX=Math.max(...poly.map(p=>p.x));
-        let minY=Math.min(...poly.map(p=>p.y)), maxY=Math.max(...poly.map(p=>p.y));
-        let radius = Math.ceil((ROBOT_CONFIG.diameter * scale)/2/cellSize);
-        for(let y=Math.floor(minY/cellSize)-radius; y<=Math.ceil(maxY/cellSize)+radius; y++){
-            for(let x=Math.floor(minX/cellSize)-radius; x<=Math.ceil(maxX/cellSize)+radius; x++){
+    
+    // Marquer les cellules occupées par les murs et obstacles avec une marge de sécurité
+    let robotRadius = Math.ceil((ROBOT_CONFIG.diameter * scale)/2/cellSize) + 1; // +1 pour marge
+    
+    let markPolygonWithMargin = (poly, value) => {
+        // Pour chaque cellule, vérifier si elle est proche du polygone
+        for(let y=0; y<rows; y++){
+            for(let x=0; x<cols; x++){
                 let cx=x*cellSize+cellSize/2, cy=y*cellSize+cellSize/2;
-                if(pointInPolygon({x:cx, y:cy}, poly)){
-                    for(let dy=-radius; dy<=radius; dy++)
-                        for(let dx=-radius; dx<=radius; dx++)
-                            if(grid[y+dy] && grid[y+dy][x+dx]!==undefined)
-                                grid[y+dy][x+dx]=1;
+                // Vérifier si le centre de la cellule est dans le polygone ou proche d'un bord
+                if(isPointNearPolygon({x:cx, y:cy}, poly, robotRadius * cellSize)) {
+                    grid[y][x] = value;
                 }
             }
         }
     };
-    for(let ob of obstacles) markPolygon(ob.points);
-    for(let wall of walls) markPolygon(wall.points);
+    
+    // Marquer tous les obstacles et murs
+    for(let ob of obstacles) markPolygonWithMargin(ob.points, 1);
+    for(let wall of walls) markPolygonWithMargin(wall.points, 1);
+    
     return {grid,cellSize,cols,rows};
 }
+
+function isPointNearPolygon(point, polygon, distance) {
+    // Vérifier si le point est dans le polygone
+    if(pointInPolygon(point, polygon)) return true;
+    
+    // Vérifier la distance aux bords
+    for(let i = 0; i < polygon.length; i++) {
+        let p1 = polygon[i];
+        let p2 = polygon[(i + 1) % polygon.length];
+        if(distanceToLineSegment(point, p1, p2) < distance) return true;
+    }
+    return false;
+}
+
+function distanceToLineSegment(point, p1, p2) {
+    let dx = p2.x - p1.x;
+    let dy = p2.y - p1.y;
+    let lengthSquared = dx * dx + dy * dy;
+    
+    if (lengthSquared === 0) return getDistance(point, p1);
+    
+    let t = Math.max(0, Math.min(1, ((point.x - p1.x) * dx + (point.y - p1.y) * dy) / lengthSquared));
+    let projection = {x: p1.x + t * dx, y: p1.y + t * dy};
+    
+    return getDistance(point, projection);
+}
+
 function pointInPolygon(point, vs) {
     let x = point.x, y = point.y, inside = false;
     for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
         let xi = vs[i].x, yi = vs[i].y;
         let xj = vs[j].x, yj = vs[j].y;
-        let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi + 0.00001) + xi);
+        let intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
         if (intersect) inside = !inside;
     }
     return inside;
 }
 
-// --- A* Pathfinding ---
+// --- A* Pathfinding amélioré ---
 function astar(start, end, gridObj) {
     let {grid,cellSize,cols,rows} = gridObj;
     let node = (x,y,parent,g,h) => ({x,y,parent,g,h,f:g+h});
     let startCell = {x: Math.floor(start.x/cellSize), y: Math.floor(start.y/cellSize)};
     let endCell = {x: Math.floor(end.x/cellSize), y: Math.floor(end.y/cellSize)};
+    
+    // Vérifier que les points de départ et d'arrivée sont valides
+    if(startCell.x < 0 || startCell.x >= cols || startCell.y < 0 || startCell.y >= rows ||
+       endCell.x < 0 || endCell.x >= cols || endCell.y < 0 || endCell.y >= rows) {
+        return [start, end];
+    }
+    
     let open = [node(startCell.x,startCell.y,null,0,
         Math.abs(startCell.x-endCell.x)+Math.abs(startCell.y-endCell.y))];
     let closed = new Set();
     let key = (x,y)=>`${x},${y}`;
     let dirs = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    
     while(open.length){
         open.sort((a,b)=>a.f-b.f);
         let cur = open.shift();
+        
         if(cur.x===endCell.x && cur.y===endCell.y){
             let path = [];
             while(cur){
                 path.push({x:cur.x*cellSize+cellSize/2, y:cur.y*cellSize+cellSize/2});
                 cur=cur.parent;
             }
-            return path.reverse();
+            return smoothPath(path.reverse(), gridObj);
         }
+        
         closed.add(key(cur.x,cur.y));
+        
         for(let [dx,dy] of dirs){
             let nx=cur.x+dx, ny=cur.y+dy;
             if(nx<0||ny<0||nx>=cols||ny>=rows) continue;
             if(grid[ny][nx]===1) continue;
             if(closed.has(key(nx,ny))) continue;
-            let ng = cur.g + ((dx*dx+dy*dy)===2?1.41:1);
+            
+            let ng = cur.g + ((dx*dx+dy*dy)===2?1.414:1);
             let nh = Math.abs(nx-endCell.x)+Math.abs(ny-endCell.y);
             let n = node(nx,ny,cur,ng,nh);
-            if(!open.some(o=>o.x===nx&&o.y===ny&&o.f<=n.f)) open.push(n);
+            
+            let existing = open.find(o=>o.x===nx&&o.y===ny);
+            if(!existing || existing.g > ng) {
+                if(existing) {
+                    open = open.filter(o => !(o.x===nx && o.y===ny));
+                }
+                open.push(n);
+            }
         }
     }
-    // Pas de chemin trouvé
-    return [start,end];
+    
+    // Pas de chemin trouvé - retour direct
+    return [start, end];
 }
 
-// --- Génération du chemin optimisé avec gestion de capacité ---
+// Lissage du chemin pour éviter les zigzags
+function smoothPath(path, gridObj) {
+    if(path.length <= 2) return path;
+    
+    let smoothed = [path[0]];
+    let current = 0;
+    
+    while(current < path.length - 1) {
+        let farthest = current + 1;
+        for(let i = path.length - 1; i > current; i--) {
+            if(hasLineOfSight(path[current], path[i], gridObj)) {
+                farthest = i;
+                break;
+            }
+        }
+        smoothed.push(path[farthest]);
+        current = farthest;
+    }
+    
+    return smoothed;
+}
+
+function hasLineOfSight(p1, p2, gridObj) {
+    let {grid, cellSize, cols, rows} = gridObj;
+    let steps = Math.max(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y)) / cellSize;
+    
+    for(let t = 0; t <= 1; t += 1/steps) {
+        let x = p1.x + (p2.x - p1.x) * t;
+        let y = p1.y + (p2.y - p1.y) * t;
+        let gx = Math.floor(x / cellSize);
+        let gy = Math.floor(y / cellSize);
+        
+        if(gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+            if(grid[gy][gx] === 1) return false;
+        }
+    }
+    return true;
+}
+
+// --- Génération de couverture pour zone rectangulaire ---
+function generateCoveragePathForZone(zone, robotDiameter) {
+    let points = zone.points;
+    
+    // Trouver les limites de la zone
+    let minX = Math.min(...points.map(p => p.x));
+    let maxX = Math.max(...points.map(p => p.x));
+    let minY = Math.min(...points.map(p => p.y));
+    let maxY = Math.max(...points.map(p => p.y));
+    
+    let bandSpacing = robotDiameter * scale * 0.9; // 90% pour assurer le chevauchement
+    let path = [];
+    let direction = 1;
+    
+    // Parcours en zigzag
+    for (let y = minY + bandSpacing / 2; y <= maxY - bandSpacing / 2; y += bandSpacing) {
+        let intersections = [];
+        
+        // Trouver les intersections avec les bords de la zone
+        for(let x = minX; x <= maxX; x += 5) {
+            if(pointInPolygon({x, y}, points)) {
+                if(intersections.length === 0 || x - intersections[intersections.length-1] > bandSpacing/2) {
+                    intersections.push(x);
+                }
+            }
+        }
+        
+        if(intersections.length >= 2) {
+            let x1 = intersections[0];
+            let x2 = intersections[intersections.length - 1];
+            
+            if (direction === 1) {
+                path.push({ x: x1, y: y });
+                path.push({ x: x2, y: y });
+            } else {
+                path.push({ x: x2, y: y });
+                path.push({ x: x1, y: y });
+            }
+            direction *= -1;
+        }
+    }
+    
+    return path;
+}
+
+// --- Génération du chemin optimisé avec gestion de capacité et sessions multiples ---
 function generateOptimizedPath() {
     if (!chargingStation || zones.length === 0) {
-        alert("Ajoute une station de recharge et au moins une zone !");
+        alert("Veuillez placer une station de recharge et au moins une zone !");
         return;
     }
-    let path = [];
-    let current = { x: chargingStation.x, y: chargingStation.y };
-    let robotDiameter = ROBOT_CONFIG.diameter;
+    
+    sessions = []; // Réinitialiser les sessions
     let robotCapacity = ROBOT_CONFIG.capacity;
-    let gridObj = makeGrid(10); // Grille fine
-    let currentLoad = 0;
-
-    let remainingZones = zones.map((z, idx) => ({...z, idx, done: false})); // pour tracking
-    // Parcours simple (ordre de la liste)
-    for(let i=0; i<remainingZones.length; i++) {
-        let zone = remainingZones[i];
-        if(zone.done) continue;
-        let area = getPolygonArea(zone.points);
-        let dirt = area * zone.dirtLevel;
-        // Si dépasser, retour station puis reprendre
-        if(currentLoad + dirt > robotCapacity) {
-            // Retour station
-            let segToStation = astar(current, chargingStation, gridObj);
-            for(let p of segToStation) path.push(p);
-            current = { x: chargingStation.x, y: chargingStation.y };
-            currentLoad = 0;
+    let robotDiameter = ROBOT_CONFIG.diameter;
+    let gridObj = makeGrid(5); // Grille fine pour pathfinding précis
+    
+    // Trier les zones par priorité
+    let sortedZones = [...zones].sort((a, b) => a.priority - b.priority);
+    let remainingZones = sortedZones.map(z => ({...z, cleaned: false}));
+    
+    let sessionCount = 0;
+    const MAX_SESSIONS = 10;
+    
+    while(remainingZones.some(z => !z.cleaned) && sessionCount < MAX_SESSIONS) {
+        let currentSession = {
+            path: [],
+            zones: [],
+            volume: 0,
+            distance: 0
+        };
+        
+        let currentPos = { x: chargingStation.x, y: chargingStation.y };
+        let currentLoad = 0;
+        
+        // Démarrer de la station
+        currentSession.path.push({...currentPos});
+        
+        // Nettoyer les zones tant que la capacité le permet
+        for(let i = 0; i < remainingZones.length; i++) {
+            let zone = remainingZones[i];
+            if(zone.cleaned) continue;
+            
+            let area = getPolygonArea(zone.points);
+            let dirtVolume = area * zone.dirtLevel;
+            
+            // Vérifier si on peut nettoyer cette zone
+            if(currentLoad + dirtVolume <= robotCapacity) {
+                // Pathfinding vers la zone
+                let zoneEntry = getPolygonCenter(zone.points);
+                let pathToZone = astar(currentPos, zoneEntry, gridObj);
+                
+                // Ajouter le chemin vers la zone
+                for(let j = 1; j < pathToZone.length; j++) {
+                    currentSession.path.push(pathToZone[j]);
+                }
+                
+                // Générer le chemin de couverture pour la zone
+                let coveragePath = generateCoveragePathForZone(zone, robotDiameter);
+                if(coveragePath.length > 0) {
+                    // Aller au début de la couverture
+                    let pathToCoverage = astar(currentSession.path[currentSession.path.length-1], coveragePath[0], gridObj);
+                    for(let j = 1; j < pathToCoverage.length; j++) {
+                        currentSession.path.push(pathToCoverage[j]);
+                    }
+                    
+                    // Ajouter le chemin de couverture
+                    for(let j = 0; j < coveragePath.length; j++) {
+                        currentSession.path.push(coveragePath[j]);
+                    }
+                    
+                    currentPos = coveragePath[coveragePath.length - 1];
+                }
+                
+                // Marquer la zone comme nettoyée
+                currentSession.zones.push(zone);
+                currentSession.volume += dirtVolume;
+                currentLoad += dirtVolume;
+                zone.cleaned = true;
+            }
         }
-        // Déplacement vers la zone
-        let zoneEntry;
-        if(zone.points.length === 4) {
-            let coverage = generateCoveragePathForRectangle(zone.points, robotDiameter);
-            zoneEntry = coverage[0];
-            // Aller du point courant à la zone d'entrée
-            let seg = astar(current, zoneEntry, gridObj);
-            for(let p of seg) path.push(p);
-            // Nettoyer la zone (ajoute tous les points du coverage)
-            for(let k=0;k<coverage.length;k++) path.push(coverage[k]);
-            current = coverage[coverage.length-1];
+        
+        // Retour à la station
+        if(currentSession.zones.length > 0) {
+            let pathToStation = astar(currentPos, chargingStation, gridObj);
+            for(let j = 1; j < pathToStation.length; j++) {
+                currentSession.path.push(pathToStation[j]);
+            }
+            
+            // Calculer la distance totale
+            for(let i = 1; i < currentSession.path.length; i++) {
+                currentSession.distance += getDistance(currentSession.path[i-1], currentSession.path[i]) / scale;
+            }
+            
+            sessions.push(currentSession);
+            sessionCount++;
         } else {
-            zoneEntry = getPolygonCenter(zone.points);
-            let seg = astar(current, zoneEntry, gridObj);
-            for(let p of seg) path.push(p);
-            current = zoneEntry;
+            break; // Plus rien à nettoyer ou capacité insuffisante
         }
-        currentLoad += dirt;
-        remainingZones[i].done = true;
     }
-    // Retour station final si pas déjà là
-    if(current.x !== chargingStation.x || current.y !== chargingStation.y) {
-        let ret = astar(current, { x: chargingStation.x, y: chargingStation.y }, gridObj);
-        for(let p of ret) path.push(p);
-    }
-    optimizedPath = path;
-    document.getElementById("totalDistance").textContent = computeTotalPathDistance(path).toFixed(2) + " m";
+    
+    updateStats();
+    updateSessionsList();
     redraw();
-    alert("Trajectoire de couverture générée !");
-}
-function computeTotalPathDistance(path){
-    let d=0;
-    for(let i=1;i<path.length;i++) d+=getDistance(path[i-1],path[i]);
-    return d;
-}
-
-function simulateRobot(){
-    if(!optimizedPath.length){alert("Génère d'abord la trajectoire !");return;}
-    simulationActive=true; simulationStep=0;
-    function step() {
-        if(!simulationActive) return;
-        redraw();
-        simulationStep++;
-        if(simulationStep<optimizedPath.length) setTimeout(step,30);
-        else simulationActive=false;
+    
+    if(sessions.length === 0) {
+        alert("Impossible de générer des trajectoires. Vérifiez la capacité du robot et la taille des zones.");
+    } else {
+        alert(`${sessions.length} session(s) de nettoyage générée(s) !`);
     }
-    step();
 }
 
+// Simulation du robot
+function simulateRobot(){
+    if(sessions.length === 0){
+        alert("Générez d'abord les trajectoires !");
+        return;
+    }
+    
+    if(simulationActive) {
+        simulationActive = false;
+        return;
+    }
+    
+    simulationActive = true;
+    currentSessionIndex = 0;
+    simulationStep = 0;
+    
+    function simulateNextSession() {
+        if(currentSessionIndex >= sessions.length) {
+            simulationActive = false;
+            alert("Simulation terminée !");
+            return;
+        }
+        
+        let session = sessions[currentSessionIndex];
+        simulationStep = 0;
+        
+        function step() {
+            if(!simulationActive) return;
+            
+            redraw();
+            simulationStep++;
+            
+            if(simulationStep < session.path.length) {
+                setTimeout(step, 50); // 50ms entre chaque étape
+            } else {
+                // Passer à la session suivante après une pause
+                currentSessionIndex++;
+                setTimeout(simulateNextSession, 1000); // 1s de pause entre sessions
+            }
+        }
+        
+        step();
+    }
+    
+    simulateNextSession();
+}
+
+// Initialisation
+updateMeasurePanel();
 redraw();
 updateZoneList();
 updateStats();
+
+// Rendre les fonctions globales
 window.generateOptimizedPath = generateOptimizedPath;
 window.simulateRobot = simulateRobot;
 window.clearAll = clearAll;
+window.clearSessions = clearSessions;
+window.deleteZone = deleteZone;
+window.deleteObstacle = deleteObstacle;
+window.deleteWall = deleteWall;
 </script>
 </body>
 </html>
